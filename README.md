@@ -14,7 +14,8 @@ are listed as *Coming soon* until Supabase and Razorpay are connected and files 
 
 | Route | What it is |
 |---|---|
-| `/` | Home: hero, classes, features, pricing, FAQ |
+| `/` | Home: hero, trust strip, product lines, shop by class, featured subjects, look inside a set, quality process, pricing, guarantees, FAQ |
+| `/papers` | Every subject of both classes as product cards (live availability and prices) |
 | `/classes/10`, `/classes/12` | All subjects of a class, grouped by stream |
 | `/classes/[level]/[subject]` | 30 sets with Word / PDF slots, per-set purchase and subject bundle |
 | `/login` | Email + password, magic link, optional Google |
@@ -71,6 +72,9 @@ npm install
 cp .env.example .env.local   # fill in keys (optional — placeholder mode works without them)
 npm run dev
 ```
+
+To add a new kind of product to the home page (e.g. question banks when they go on sale), edit `PRODUCT_LINES` in
+`src/lib/catalog.ts` — set `status: "live"` and an `href`.
 
 To change subjects or the number of sets, edit `src/lib/catalog.ts` / `src/lib/site.ts`, then
 regenerate the seed with `node scripts/generate-seed.mjs`.

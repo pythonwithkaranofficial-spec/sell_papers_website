@@ -1,5 +1,5 @@
 import "server-only";
-import { SET_NUMBERS, setTitle, subjectById, subjectsFor, type ClassLevel, type FileKind, type Subject } from "./catalog";
+import { SET_NUMBERS, SUBJECTS, setTitle, subjectById, subjectsFor, type ClassLevel, type FileKind, type Subject } from "./catalog";
 import { defaultPrices } from "./site";
 import { isSupabaseConfigured } from "./supabase/env";
 import { createAdminClient, createClient } from "./supabase/server";
@@ -111,6 +111,52 @@ export async function getPublishedCounts(level: ClassLevel): Promise<Record<stri
     /* placeholder counts */
   }
   return counts;
+}
+
+export type SubjectSummary = {
+  available: number; // sets on sale right now
+  setPricePaise: number; // lowest single-set price
+  bundlePricePaise: number;
+  bundleOnSale: boolean;
+};
+
+/** Live availability and prices of every subject, for listing pages (defaults in placeholder mode). */
+export async function getCatalogSummary(): Promise<Record<string, SubjectSummary>> {
+  const summary: Record<string, SubjectSummary> = Object.fromEntries(
+    SUBJECTS.map((s) => [
+      s.id,
+      { available: 0, setPricePaise: defaultPrices.setPaise, bundlePricePaise: defaultPrices.subjectBundlePaise, bundleOnSale: true },
+    ]),
+  );
+  if (!isSupabaseConfigured) return summary;
+  try {
+    const supabase = await createClient();
+    const [{ data: subjects }, { data: papers }] = await Promise.all([
+      supabase.from("subjects").select("id,bundle_price_paise,is_bundle_on_sale"),
+      supabase.from("papers").select("subject_id,price_paise,is_published,paper_files(kind)").limit(5000),
+    ]);
+    for (const s of subjects ?? []) {
+      const row = summary[s.id as string];
+      if (!row) continue;
+      row.bundlePricePaise = (s.bundle_price_paise as number) ?? row.bundlePricePaise;
+      row.bundleOnSale = (s.is_bundle_on_sale as boolean) ?? true;
+    }
+    const minPrice: Record<string, number> = {};
+    for (const p of papers ?? []) {
+      const id = p.subject_id as string;
+      const row = summary[id];
+      if (!row) continue;
+      const hasFiles = ((p.paper_files as unknown[] | null) ?? []).length > 0;
+      if (p.is_published && hasFiles) {
+        row.available += 1;
+        minPrice[id] = Math.min(minPrice[id] ?? Infinity, p.price_paise as number);
+      }
+    }
+    for (const [id, price] of Object.entries(minPrice)) summary[id].setPricePaise = price;
+  } catch {
+    /* fall back to defaults */
+  }
+  return summary;
 }
 
 export type LibraryItem = { subject: Subject; set: SetInfo };

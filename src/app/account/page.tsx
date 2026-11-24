@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { FileBadge } from "@/components/FileBadge";
+import { Icon } from "@/components/Icon";
+import { SubjectCover } from "@/components/SubjectCover";
 import { FILE_KINDS } from "@/lib/catalog";
 import { getLibrary } from "@/lib/data";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
@@ -19,7 +21,7 @@ export default async function AccountPage() {
     <div className="mx-auto max-w-5xl px-4 py-14 sm:px-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-gold">My account</p>
+          <p className="eyebrow">My account</p>
           <h1 className="font-display mt-2 text-4xl font-semibold">My papers</h1>
           <p className="mt-2 text-sm text-muted">Signed in as {user.email}</p>
         </div>
@@ -38,7 +40,10 @@ export default async function AccountPage() {
 
       {items.length === 0 ? (
         <div className="card mt-10 p-10 text-center">
-          <p className="font-display text-2xl font-semibold">No papers yet</p>
+          <span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-gold-soft text-gold">
+            <Icon name="file" className="h-7 w-7" />
+          </span>
+          <p className="font-display mt-4 text-2xl font-semibold">No papers yet</p>
           <p className="mt-2 text-muted">Papers you buy appear here, ready to download any time.</p>
           <div className="mt-6 flex justify-center gap-3">
             <Link href="/classes/10" className="btn btn-primary">Class 10 papers</Link>
@@ -49,6 +54,9 @@ export default async function AccountPage() {
         <div className="mt-10 space-y-4">
           {items.map(({ subject, set }) => (
             <div key={set.paperId} className="card flex flex-col gap-4 p-5 sm:flex-row sm:items-center">
+              <div className="w-12 shrink-0 max-sm:hidden">
+                <SubjectCover subject={subject} />
+              </div>
               <div className="flex-1">
                 <p className="text-xs font-semibold uppercase tracking-wider text-muted">Class {subject.classLevel} · {subject.name}</p>
                 <p className="font-display text-lg font-semibold">{set.title}</p>
