@@ -8,6 +8,9 @@ import { CLASSES, PRODUCT_LINES, SUBJECTS, subjectById, subjectsFor } from "@/li
 import { getCatalogSummary } from "@/lib/data";
 import { formatINR, SETS_PER_SUBJECT, site } from "@/lib/site";
 
+// Rebuilt at most once a minute and served from the cache in between, so it opens instantly.
+export const revalidate = 60;
+
 const faqs = [
   {
     q: "What exactly do I get when I buy a set?",

@@ -9,6 +9,9 @@ import { CLASSES, subjectsFor, type ClassLevel } from "@/lib/catalog";
 import { getCatalogSummary } from "@/lib/data";
 import { SETS_PER_SUBJECT, site } from "@/lib/site";
 
+// Rebuilt at most once a minute and served from the cache in between, so it opens instantly.
+export const revalidate = 60;
+
 export function generateStaticParams() {
   return CLASSES.map((c) => ({ level: c.level }));
 }

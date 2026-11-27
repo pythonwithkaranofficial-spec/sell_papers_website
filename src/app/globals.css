@@ -226,3 +226,12 @@ details > summary::-webkit-details-marker {
     transition: none;
   }
 }
+
+@keyframes loadbar {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(300%);
+  }
+}

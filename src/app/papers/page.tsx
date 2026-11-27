@@ -6,6 +6,9 @@ import { CLASSES, SUBJECTS, subjectsFor } from "@/lib/catalog";
 import { getCatalogSummary } from "@/lib/data";
 import { SETS_PER_SUBJECT, site } from "@/lib/site";
 
+// Rebuilt at most once a minute and served from the cache in between, so it opens instantly.
+export const revalidate = 60;
+
 export const metadata: Metadata = {
   title: "All Practice Papers — Class 10 & 12",
   description: `Browse CBSE ${site.session} practice paper bundles for all ${SUBJECTS.length} subjects of Class 10 and Class 12, each with ${SETS_PER_SUBJECT} sets and complete answer keys.`,

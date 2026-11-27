@@ -1,6 +1,6 @@
 "use client";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 type Props = {
   type: "paper" | "subject";
@@ -22,19 +22,33 @@ declare global {
 function loadCheckout(): Promise<boolean> {
   if (typeof window === "undefined") return Promise.resolve(false);
   if (window.Razorpay) return Promise.resolve(true);
-  return new Promise((resolve) => {
+  checkoutLoading ??= new Promise((resolve) => {
     const s = document.createElement("script");
     s.src = "https://checkout.razorpay.com/v1/checkout.js";
     s.onload = () => resolve(true);
-    s.onerror = () => resolve(false);
+    s.onerror = () => {
+      checkoutLoading = null;
+      resolve(false);
+    };
     document.body.appendChild(s);
   });
+  return checkoutLoading;
 }
+
+let checkoutLoading: Promise<boolean> | null = null;
 
 export function BuyButton({ type, paperId, subjectId, label, className, signedIn, returnTo }: Props) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+
+  // Load Razorpay's checkout script in the background so the payment window opens instantly on click.
+  useEffect(() => {
+    if (!signedIn) return;
+    const w = window as Window & { requestIdleCallback?: (cb: () => void) => number };
+    if (w.requestIdleCallback) w.requestIdleCallback(() => void loadCheckout());
+    else setTimeout(() => void loadCheckout(), 1500);
+  }, [signedIn]);
 
   async function buy() {
     setMsg(null);

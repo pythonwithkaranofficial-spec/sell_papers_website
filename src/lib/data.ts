@@ -1,7 +1,9 @@
 import "server-only";
-import { SET_NUMBERS, SUBJECTS, setTitle, subjectById, subjectsFor, type ClassLevel, type FileKind, type Subject } from "./catalog";
+import { unstable_cache } from "next/cache";
+import { SET_NUMBERS, SUBJECTS, setTitle, subjectById, type FileKind, type Subject } from "./catalog";
 import { defaultPrices } from "./site";
 import { isSupabaseConfigured } from "./supabase/env";
+import { createPublicClient } from "./supabase/public";
 import { createAdminClient, createClient } from "./supabase/server";
 
 export type SetInfo = {
@@ -35,6 +37,50 @@ function placeholderSets(subject: Subject): SetInfo[] {
   }));
 }
 
+/** Tag on all cached catalogue data; revalidate it after uploads or price changes. */
+export const CATALOG_TAG = "catalog";
+
+type CatalogPaper = { id: string; subject_id: string; set_no: number; price_paise: number; is_published: boolean; kinds: FileKind[] };
+type CatalogSubject = { id: string; bundle_price_paise: number; is_bundle_on_sale: boolean };
+
+/**
+ * Public catalogue (subjects, sets, which files exist), cached for 60 seconds and shared by every visitor,
+ * so listing and product pages don't wait on the database. Throws on errors so failures are never cached.
+ */
+const getCatalog = unstable_cache(
+  async (): Promise<{ subjects: CatalogSubject[]; papers: CatalogPaper[] }> => {
+    const supabase = createPublicClient();
+    const [s, p] = await Promise.all([
+      supabase.from("subjects").select("id,bundle_price_paise,is_bundle_on_sale"),
+      supabase.from("papers").select("id,subject_id,set_no,price_paise,is_published,paper_files(kind)").limit(5000),
+    ]);
+    if (s.error) throw new Error(s.error.message);
+    if (p.error) throw new Error(p.error.message);
+    return {
+      subjects: (s.data ?? []) as CatalogSubject[],
+      papers: (p.data ?? []).map((r) => ({
+        id: r.id as string,
+        subject_id: r.subject_id as string,
+        set_no: r.set_no as number,
+        price_paise: r.price_paise as number,
+        is_published: Boolean(r.is_published),
+        kinds: ((r.paper_files as { kind: FileKind }[] | null) ?? []).map((f) => f.kind),
+      })),
+    };
+  },
+  ["catalog-v1"],
+  { revalidate: 60, tags: [CATALOG_TAG] },
+);
+
+async function loadCatalog() {
+  if (!isSupabaseConfigured) return null;
+  try {
+    return await getCatalog();
+  } catch {
+    return null;
+  }
+}
+
 export async function getSubjectDetail(subject: Subject, userId: string | null): Promise<SubjectDetail> {
   const base: SubjectDetail = {
     subject,
@@ -44,73 +90,48 @@ export async function getSubjectDetail(subject: Subject, userId: string | null):
     sets: placeholderSets(subject),
     live: false,
   };
-  if (!isSupabaseConfigured) return base;
-  try {
-    const supabase = await createClient();
-    const [{ data: subj }, { data: papers }] = await Promise.all([
-      supabase.from("subjects").select("bundle_price_paise,is_bundle_on_sale").eq("id", subject.id).maybeSingle(),
-      supabase
-        .from("papers")
-        .select("id,set_no,title,price_paise,is_published,paper_files(kind)")
-        .eq("subject_id", subject.id)
-        .order("set_no"),
-    ]);
-    const ownedPapers = new Set<string>();
-    let ownsBundle = false;
-    if (userId) {
-      const { data: purchases } = await supabase
-        .from("purchases")
-        .select("paper_id,subject_id")
-        .eq("user_id", userId);
-      for (const p of purchases ?? []) {
-        if (p.subject_id === subject.id) ownsBundle = true;
-        if (p.paper_id) ownedPapers.add(p.paper_id);
-      }
-    }
-    const byNo = new Map((papers ?? []).map((p) => [p.set_no as number, p]));
-    const sets = SET_NUMBERS.map((n) => {
-      const p = byNo.get(n);
-      if (!p) return base.sets[n - 1];
-      const files = ((p.paper_files as { kind: FileKind }[] | null) ?? []).map((f) => f.kind);
-      return {
-        setNo: n,
-        title: setTitle(subject, n),
-        paperId: p.id as string,
-        pricePaise: p.price_paise as number,
-        published: Boolean(p.is_published) && files.length > 0,
-        files,
-        owned: ownsBundle || ownedPapers.has(p.id as string),
-      };
-    });
-    return {
-      subject,
-      bundlePricePaise: subj?.bundle_price_paise ?? base.bundlePricePaise,
-      bundleOnSale: subj?.is_bundle_on_sale ?? true,
-      ownsBundle,
-      sets,
-      live: true,
-    };
-  } catch {
-    return base;
+  // Catalogue comes from the shared cache; only the visitor's own purchases are read live.
+  const [catalog, purchases] = await Promise.all([loadCatalog(), userId ? getPurchases(userId) : Promise.resolve([])]);
+  if (!catalog) return base;
+  let ownsBundle = false;
+  const ownedPapers = new Set<string>();
+  for (const p of purchases) {
+    if (p.subject_id === subject.id) ownsBundle = true;
+    if (p.paper_id) ownedPapers.add(p.paper_id);
   }
+  const subj = catalog.subjects.find((s) => s.id === subject.id);
+  const byNo = new Map(catalog.papers.filter((p) => p.subject_id === subject.id).map((p) => [p.set_no, p]));
+  const sets = SET_NUMBERS.map((n) => {
+    const p = byNo.get(n);
+    if (!p) return base.sets[n - 1];
+    return {
+      setNo: n,
+      title: setTitle(subject, n),
+      paperId: p.id,
+      pricePaise: p.price_paise,
+      published: p.is_published && p.kinds.length > 0,
+      files: p.kinds,
+      owned: ownsBundle || ownedPapers.has(p.id),
+    };
+  });
+  return {
+    subject,
+    bundlePricePaise: subj?.bundle_price_paise ?? base.bundlePricePaise,
+    bundleOnSale: subj?.is_bundle_on_sale ?? true,
+    ownsBundle,
+    sets,
+    live: true,
+  };
 }
 
-/** Number of published sets per subject for a class (0 everywhere in placeholder mode). */
-export async function getPublishedCounts(level: ClassLevel): Promise<Record<string, number>> {
-  const counts: Record<string, number> = Object.fromEntries(subjectsFor(level).map((s) => [s.id, 0]));
-  if (!isSupabaseConfigured) return counts;
+async function getPurchases(userId: string): Promise<{ paper_id: string | null; subject_id: string | null }[]> {
   try {
     const supabase = await createClient();
-    const { data } = await supabase
-      .from("papers")
-      .select("subject_id,is_published,subjects!inner(class_level)")
-      .eq("subjects.class_level", level)
-      .eq("is_published", true);
-    for (const row of data ?? []) counts[row.subject_id as string] = (counts[row.subject_id as string] ?? 0) + 1;
+    const { data } = await supabase.from("purchases").select("paper_id,subject_id").eq("user_id", userId);
+    return data ?? [];
   } catch {
-    /* placeholder counts */
+    return [];
   }
-  return counts;
 }
 
 export type SubjectSummary = {
@@ -128,34 +149,24 @@ export async function getCatalogSummary(): Promise<Record<string, SubjectSummary
       { available: 0, setPricePaise: defaultPrices.setPaise, bundlePricePaise: defaultPrices.subjectBundlePaise, bundleOnSale: true },
     ]),
   );
-  if (!isSupabaseConfigured) return summary;
-  try {
-    const supabase = await createClient();
-    const [{ data: subjects }, { data: papers }] = await Promise.all([
-      supabase.from("subjects").select("id,bundle_price_paise,is_bundle_on_sale"),
-      supabase.from("papers").select("subject_id,price_paise,is_published,paper_files(kind)").limit(5000),
-    ]);
-    for (const s of subjects ?? []) {
-      const row = summary[s.id as string];
-      if (!row) continue;
-      row.bundlePricePaise = (s.bundle_price_paise as number) ?? row.bundlePricePaise;
-      row.bundleOnSale = (s.is_bundle_on_sale as boolean) ?? true;
-    }
-    const minPrice: Record<string, number> = {};
-    for (const p of papers ?? []) {
-      const id = p.subject_id as string;
-      const row = summary[id];
-      if (!row) continue;
-      const hasFiles = ((p.paper_files as unknown[] | null) ?? []).length > 0;
-      if (p.is_published && hasFiles) {
-        row.available += 1;
-        minPrice[id] = Math.min(minPrice[id] ?? Infinity, p.price_paise as number);
-      }
-    }
-    for (const [id, price] of Object.entries(minPrice)) summary[id].setPricePaise = price;
-  } catch {
-    /* fall back to defaults */
+  const catalog = await loadCatalog();
+  if (!catalog) return summary;
+  for (const s of catalog.subjects) {
+    const row = summary[s.id];
+    if (!row) continue;
+    row.bundlePricePaise = s.bundle_price_paise ?? row.bundlePricePaise;
+    row.bundleOnSale = s.is_bundle_on_sale ?? true;
   }
+  const minPrice: Record<string, number> = {};
+  for (const p of catalog.papers) {
+    const row = summary[p.subject_id];
+    if (!row) continue;
+    if (p.is_published && p.kinds.length > 0) {
+      row.available += 1;
+      minPrice[p.subject_id] = Math.min(minPrice[p.subject_id] ?? Infinity, p.price_paise);
+    }
+  }
+  for (const [id, price] of Object.entries(minPrice)) summary[id].setPricePaise = price;
   return summary;
 }
 

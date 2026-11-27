@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
 import { Icon, type IconName } from "@/components/Icon";
 import { LoginForm } from "@/components/LoginForm";
 import { site } from "@/lib/site";
@@ -13,9 +14,7 @@ const perks: [IconName, string, string][] = [
   ["lock", "Safe & private", "Secure sign-in. Payments are handled by Razorpay."],
 ];
 
-export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
-  const { next } = await searchParams;
-  const safeNext = next && next.startsWith("/") && !next.startsWith("//") ? next : "/account";
+export default function LoginPage() {
   return (
     <div className="ruled border-b border-line">
       <div className="mx-auto grid max-w-5xl items-center gap-10 px-4 py-16 sm:px-6 md:grid-cols-[1fr_420px] md:py-20">
@@ -43,7 +42,9 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           <h2 className="font-display text-3xl font-semibold">Welcome</h2>
           <p className="mt-2 text-sm text-muted">Sign in or create your free account.</p>
           {isSupabaseConfigured ? (
-            <LoginForm next={safeNext} googleEnabled={process.env.NEXT_PUBLIC_ENABLE_GOOGLE_LOGIN === "true"} />
+            <Suspense fallback={<div className="mt-6 h-64 animate-pulse rounded-xl bg-paper" />}>
+              <LoginForm googleEnabled={process.env.NEXT_PUBLIC_ENABLE_GOOGLE_LOGIN === "true"} />
+            </Suspense>
           ) : (
             <p className="mt-6 rounded-lg bg-gold-soft p-4 text-sm text-ink-soft">
               Sign-in will be available once the website is connected to Supabase.

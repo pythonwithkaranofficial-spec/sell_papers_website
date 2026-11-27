@@ -6,6 +6,8 @@ import { isSupabaseConfigured, supabaseAnonKey, supabaseUrl } from "@/lib/supaba
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
   if (!isSupabaseConfigured) return response;
+  // Visitors who are not signed in have no Supabase cookie: nothing to refresh, so skip the network call.
+  if (!request.cookies.getAll().some((c) => c.name.startsWith("sb-"))) return response;
 
   const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
     cookies: {

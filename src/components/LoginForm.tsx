@@ -1,12 +1,14 @@
 "use client";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 type Mode = "signin" | "signup" | "magic" | "reset";
 
-export function LoginForm({ next, googleEnabled }: { next: string; googleEnabled: boolean }) {
+export function LoginForm({ googleEnabled }: { googleEnabled: boolean }) {
   const router = useRouter();
+  const requested = useSearchParams().get("next");
+  const next = requested && requested.startsWith("/") && !requested.startsWith("//") ? requested : "/account";
   const [mode, setMode] = useState<Mode>("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

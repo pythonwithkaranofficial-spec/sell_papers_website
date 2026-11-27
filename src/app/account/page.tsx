@@ -7,7 +7,7 @@ import { SubjectCover } from "@/components/SubjectCover";
 import { FILE_KINDS } from "@/lib/catalog";
 import { getLibrary } from "@/lib/data";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
-import { getUser } from "@/lib/supabase/server";
+import { getUser, isAdmin } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "My papers" };
 
@@ -15,7 +15,7 @@ export default async function AccountPage() {
   if (!isSupabaseConfigured) redirect("/login");
   const user = await getUser();
   if (!user) redirect("/login?next=/account");
-  const { items, bundles } = await getLibrary(user.id);
+  const [{ items, bundles }, admin] = await Promise.all([getLibrary(user.id), isAdmin(user)]);
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-14 sm:px-6">
@@ -25,9 +25,16 @@ export default async function AccountPage() {
           <h1 className="font-display mt-2 text-4xl font-semibold">My papers</h1>
           <p className="mt-2 text-sm text-muted">Signed in as {user.email}</p>
         </div>
+        <div className="flex gap-2">
+        {admin && (
+          <Link href="/admin" className="btn btn-gold text-sm">
+            Admin panel
+          </Link>
+        )}
         <form action="/auth/signout" method="post">
           <button className="btn btn-outline text-sm">Sign out</button>
         </form>
+        </div>
       </div>
 
       {bundles.length > 0 && (

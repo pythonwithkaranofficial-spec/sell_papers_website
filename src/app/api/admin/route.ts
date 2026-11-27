@@ -1,4 +1,6 @@
+import { revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
+import { CATALOG_TAG } from "@/lib/data";
 import { DEFAULT_BUCKET, resolveStoragePath } from "@/lib/storage";
 import { createAdminClient, getUser, isAdmin } from "@/lib/supabase/server";
 
@@ -18,6 +20,13 @@ export async function POST(req: Request) {
   const kind = String(b.kind || "");
   const paperId = String(b.paperId || "");
 
+  const res = await handle(b, admin, kind, paperId);
+  // Uploads, deletions and price changes must show on the (cached) store pages immediately.
+  if (b.action !== "upload-url" && res.ok) revalidateTag(CATALOG_TAG, { expire: 0 });
+  return res;
+}
+
+async function handle(b: Record<string, unknown>, admin: ReturnType<typeof createAdminClient>, kind: string, paperId: string) {
   switch (b.action) {
     case "upload-url": {
       if (!KINDS.includes(kind as (typeof KINDS)[number])) return NextResponse.json({ error: "bad kind" }, { status: 400 });

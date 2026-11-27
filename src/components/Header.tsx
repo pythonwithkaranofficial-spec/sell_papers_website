@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { site } from "@/lib/site";
-import { getUser, isAdmin } from "@/lib/supabase/server";
+import { HeaderActions, MobileMenu } from "./HeaderAuth";
 import { Icon } from "./Icon";
 import { Logo } from "./Logo";
 
@@ -12,9 +12,7 @@ const nav = [
   { href: "/#faq", label: "FAQ" },
 ];
 
-export async function Header() {
-  const user = await getUser();
-  const admin = await isAdmin(user);
+export function Header() {
   return (
     <>
       {/* announcement bar */}
@@ -51,58 +49,8 @@ export async function Header() {
           </nav>
 
           <div className="flex shrink-0 items-center gap-2">
-            {admin && (
-              <Link href="/admin" className="hidden text-sm font-semibold text-gold sm:inline">
-                Admin
-              </Link>
-            )}
-            {user ? (
-              <Link href="/account" className="btn btn-outline !py-2 text-sm">
-                <Icon name="download" className="h-4 w-4" /> My papers
-              </Link>
-            ) : (
-              <>
-                <Link href="/login" className="hidden text-sm font-semibold text-ink-soft hover:text-ink sm:inline">
-                  Sign in
-                </Link>
-                <Link href="/papers" className="btn btn-primary !py-2 text-sm">
-                  Shop papers
-                </Link>
-              </>
-            )}
-            <details className="relative lg:hidden">
-              <summary
-                className="grid h-10 w-10 cursor-pointer list-none place-items-center rounded-full border border-line bg-white"
-                aria-label="Open menu"
-              >
-                <Icon name="menu" className="h-5 w-5" />
-              </summary>
-              <div className="card absolute right-0 mt-2 w-60 p-2">
-                {nav.map((n) => (
-                  <Link key={n.href} href={n.href} className="block rounded-lg px-3 py-2.5 text-sm font-medium hover:bg-paper">
-                    {n.label}
-                  </Link>
-                ))}
-                <span className="flex items-center justify-between rounded-lg px-3 py-2.5 text-sm text-muted">
-                  Question banks <span className="chip bg-gold-soft text-[10px] text-gold">Soon</span>
-                </span>
-                <div className="my-1 h-px bg-line" />
-                {user ? (
-                  <Link href="/account" className="block rounded-lg px-3 py-2.5 text-sm font-semibold hover:bg-paper">
-                    My papers
-                  </Link>
-                ) : (
-                  <Link href="/login" className="block rounded-lg px-3 py-2.5 text-sm font-semibold hover:bg-paper">
-                    Sign in / Create account
-                  </Link>
-                )}
-                {admin && (
-                  <Link href="/admin" className="block rounded-lg px-3 py-2.5 text-sm font-semibold text-gold hover:bg-paper">
-                    Admin
-                  </Link>
-                )}
-              </div>
-            </details>
+            <HeaderActions />
+            <MobileMenu nav={nav} />
           </div>
         </div>
       </header>
