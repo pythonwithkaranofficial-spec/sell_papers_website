@@ -10,6 +10,7 @@ export function LoginForm({ next, googleEnabled }: { next: string; googleEnabled
   const [mode, setMode] = useState<Mode>("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
@@ -17,8 +18,12 @@ export function LoginForm({ next, googleEnabled }: { next: string; googleEnabled
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    setBusy(true);
     setMsg(null);
+    if (mode === "signup" && password !== confirm) {
+      setMsg({ ok: false, text: "The two passwords don't match. Please type the same password in both boxes." });
+      return;
+    }
+    setBusy(true);
     const supabase = createClient();
     try {
       if (mode === "signin") {
@@ -67,7 +72,7 @@ export function LoginForm({ next, googleEnabled }: { next: string; googleEnabled
           <button
             key={m}
             type="button"
-            onClick={() => { setMode(m); setMsg(null); }}
+            onClick={() => { setMode(m); setMsg(null); setConfirm(""); }}
             className={`rounded-full py-1.5 font-semibold ${mode === m ? "bg-white shadow-sm" : "text-muted"}`}
           >
             {l}
@@ -80,15 +85,23 @@ export function LoginForm({ next, googleEnabled }: { next: string; googleEnabled
         )}
         <Field label="Email" type="email" value={email} onChange={setEmail} autoComplete="email" required />
         {mode !== "magic" && (
-          <Field
+          <PasswordField
             label="Password"
-            type="password"
             value={password}
             onChange={setPassword}
             autoComplete={mode === "signup" ? "new-password" : "current-password"}
-            required
-            minLength={6}
+            hint={mode === "signup" ? "At least 6 characters" : undefined}
           />
+        )}
+        {mode === "signup" && (
+          <div>
+            <PasswordField label="Re-enter password" value={confirm} onChange={setConfirm} autoComplete="new-password" />
+            {confirm.length > 0 && (
+              <p className={`mt-1.5 text-xs font-medium ${confirm === password ? "text-teal" : "text-red-700"}`} aria-live="polite">
+                {confirm === password ? "✓ Passwords match" : "Passwords don't match yet"}
+              </p>
+            )}
+          </div>
         )}
         <button className="btn btn-primary w-full" disabled={busy}>
           {busy ? "Please wait…" : mode === "signin" ? "Sign in" : mode === "signup" ? "Create account" : "Send me a sign-in link"}
@@ -129,5 +142,64 @@ function Field(props: {
         className="mt-1.5 w-full rounded-xl border border-line bg-white px-4 py-2.5 outline-none focus:border-ink"
       />
     </label>
+  );
+}
+
+function PasswordField(props: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  autoComplete: string;
+  hint?: string;
+}) {
+  const [show, setShow] = useState(false);
+  return (
+    <label className="block">
+      <span className="flex items-baseline justify-between text-sm font-medium">
+        {props.label}
+        {props.hint && <span className="text-xs font-normal text-muted">{props.hint}</span>}
+      </span>
+      <span className="relative mt-1.5 block">
+        <input
+          type={show ? "text" : "password"}
+          value={props.value}
+          onChange={(e) => props.onChange(e.target.value)}
+          autoComplete={props.autoComplete}
+          required
+          minLength={6}
+          className="w-full rounded-xl border border-line bg-white py-2.5 pl-4 pr-12 outline-none focus:border-ink"
+        />
+        <button
+          type="button"
+          onClick={() => setShow((s) => !s)}
+          className="absolute inset-y-0 right-1 my-auto grid h-9 w-9 place-items-center rounded-lg text-muted hover:bg-paper hover:text-ink"
+          aria-label={show ? "Hide password" : "Show password"}
+          aria-pressed={show}
+          title={show ? "Hide password" : "Show password"}
+        >
+          {show ? <EyeOff /> : <Eye />}
+        </button>
+      </span>
+    </label>
+  );
+}
+
+function Eye() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5" aria-hidden="true">
+      <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  );
+}
+
+function EyeOff() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5" aria-hidden="true">
+      <path d="M10.6 5.1A10.9 10.9 0 0 1 12 5c6.4 0 10 7 10 7a17.6 17.6 0 0 1-3.2 4.1" />
+      <path d="M6.6 6.6C3.8 8.4 2 12 2 12s3.6 7 10 7a10.4 10.4 0 0 0 5.4-1.6" />
+      <path d="M9.9 9.9a3 3 0 0 0 4.2 4.2" />
+      <path d="m3 3 18 18" />
+    </svg>
   );
 }
