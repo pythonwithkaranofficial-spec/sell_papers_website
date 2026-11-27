@@ -38,7 +38,7 @@ export default function LoginPage() {
             ))}
           </ul>
         </div>
-        <div className="card p-8">
+        <div className="card p-5 sm:p-8">
           <h2 className="font-display text-3xl font-semibold">Welcome</h2>
           <p className="mt-2 text-sm text-muted">Sign in or create your free account.</p>
           {isSupabaseConfigured ? (

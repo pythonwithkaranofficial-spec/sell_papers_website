@@ -1,6 +1,6 @@
 "use client";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 type Mode = "signin" | "signup" | "magic" | "reset";
@@ -16,6 +16,34 @@ export function LoginForm({ googleEnabled }: { googleEnabled: boolean }) {
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [codeSent, setCodeSent] = useState(false);
+  const [code, setCode] = useState("");
+  const [cooldown, setCooldown] = useState(0);
+
+  // Countdown before another code can be requested (Supabase allows one email per minute per address).
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const id = setTimeout(() => setCooldown((c) => c - 1), 1000);
+    return () => clearTimeout(id);
+  }, [cooldown]);
+
+  async function sendCode() {
+    setMsg(null);
+    setBusy(true);
+    try {
+      const { error } = await createClient().auth.signInWithOtp({ email, options: { emailRedirectTo: callback() } });
+      if (error) throw error;
+      setCodeSent(true);
+      setCode("");
+      setCooldown(60);
+      setMsg({ ok: true, text: `We sent a sign-in code to ${email}. It can take a minute to arrive — check your spam folder too.` });
+    } catch (err) {
+      const text = err instanceof Error ? err.message : "Something went wrong";
+      setMsg({ ok: false, text: /security purposes|seconds/i.test(text) ? "Please wait a minute before asking for another code." : text });
+    } finally {
+      setBusy(false);
+    }
+  }
   const callback = () => `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`;
 
   async function submit(e: React.FormEvent) {
@@ -52,10 +80,19 @@ export function LoginForm({ googleEnabled }: { googleEnabled: boolean }) {
           ok: true,
           text: "If an account exists for this email, we've sent a link to set a new password. Check your inbox (and spam folder).",
         });
+      } else if (!codeSent) {
+        setBusy(false);
+        await sendCode();
+        return;
       } else {
-        const { error } = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: callback() } });
-        if (error) throw error;
-        setMsg({ ok: true, text: "Check your inbox — we sent you a sign-in link." });
+        const { error } = await supabase.auth.verifyOtp({ email, token: code.trim(), type: "email" });
+        if (error) {
+          setMsg({ ok: false, text: "That code is wrong or has expired. Use the code from the latest email, or send a new code." });
+          return;
+        }
+        setMsg({ ok: true, text: "✓ Signed in. Opening your papers…" });
+        router.push(next);
+        router.refresh();
       }
     } catch (err) {
       setMsg({ ok: false, text: err instanceof Error ? err.message : "Something went wrong" });
@@ -69,23 +106,24 @@ export function LoginForm({ googleEnabled }: { googleEnabled: boolean }) {
     await supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo: callback() } });
   }
 
-  const tabs: [Mode, string][] = [
-    ["signin", "Sign in"],
-    ["signup", "Create account"],
-    ["magic", "Email link"],
+  const tabs: [Mode, string, string][] = [
+    ["signin", "Sign in", "Sign in"],
+    ["signup", "Create account", "Sign up"],
+    ["magic", "Email code", "Email code"],
   ];
 
   return (
     <div className="mt-6">
-      <div className="grid grid-cols-3 gap-1 rounded-full bg-paper p-1 text-sm">
-        {tabs.map(([m, l]) => (
+      <div className="grid grid-cols-3 gap-1 rounded-full bg-paper p-1 text-[13px] sm:text-sm">
+        {tabs.map(([m, l, short]) => (
           <button
             key={m}
             type="button"
-            onClick={() => { setMode(m); setMsg(null); setConfirm(""); }}
-            className={`rounded-full py-1.5 font-semibold ${mode === m || (mode === "reset" && m === "signin") ? "bg-white shadow-sm" : "text-muted"}`}
+            onClick={() => { setMode(m); setMsg(null); setConfirm(""); setCodeSent(false); setCode(""); }}
+            className={`whitespace-nowrap rounded-full px-1 py-1.5 font-semibold ${mode === m || (mode === "reset" && m === "signin") ? "bg-white shadow-sm" : "text-muted"}`}
           >
-            {l}
+            <span className="hidden sm:inline">{l}</span>
+            <span className="sm:hidden">{short}</span>
           </button>
         ))}
       </div>
@@ -99,7 +137,41 @@ export function LoginForm({ googleEnabled }: { googleEnabled: boolean }) {
         {mode === "signup" && (
           <Field label="Full name" value={name} onChange={setName} autoComplete="name" />
         )}
-        <Field label="Email" type="email" value={email} onChange={setEmail} autoComplete="email" required />
+        {mode === "magic" && !codeSent && (
+          <p className="rounded-xl bg-paper p-3 text-sm text-ink-soft">
+            No password needed. We&apos;ll email you a sign-in code — read it on any device and type it here.
+          </p>
+        )}
+        {mode === "magic" && codeSent ? (
+          <div className="space-y-4">
+            <p className="text-sm text-ink-soft">
+              Code sent to <span className="font-semibold text-ink">{email}</span>{" "}
+              <button
+                type="button"
+                onClick={() => { setCodeSent(false); setCode(""); setMsg(null); }}
+                className="font-semibold text-ink-soft underline decoration-gold underline-offset-4 hover:text-ink"
+              >
+                Change
+              </button>
+            </p>
+            <label className="block">
+              <span className="text-sm font-medium">Sign-in code from the email</span>
+              <input
+                value={code}
+                onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                pattern="[0-9]{6,10}"
+                required
+                autoFocus
+                placeholder="e.g. 482913"
+                className="mt-1.5 w-full rounded-xl border border-line bg-white px-4 py-2.5 text-center text-xl font-semibold tracking-[0.4em] outline-none placeholder:text-base placeholder:font-normal placeholder:tracking-normal focus:border-ink"
+              />
+            </label>
+          </div>
+        ) : (
+          <Field label="Email" type="email" value={email} onChange={setEmail} autoComplete="email" required />
+        )}
         {(mode === "signin" || mode === "signup") && (
           <PasswordField
             label="Password"
@@ -139,8 +211,20 @@ export function LoginForm({ googleEnabled }: { googleEnabled: boolean }) {
                 ? "Create account"
                 : mode === "reset"
                   ? "Send reset link"
-                  : "Send me a sign-in link"}
+                  : codeSent
+                    ? "Sign in with code"
+                    : "Send me a code"}
         </button>
+        {mode === "magic" && codeSent && (
+          <button
+            type="button"
+            onClick={sendCode}
+            disabled={busy || cooldown > 0}
+            className="w-full text-center text-sm font-semibold text-ink-soft hover:text-ink disabled:cursor-not-allowed disabled:text-muted"
+          >
+            {cooldown > 0 ? `Resend code in ${cooldown}s` : "Resend code"}
+          </button>
+        )}
         {mode === "reset" && (
           <button type="button" onClick={() => { setMode("signin"); setMsg(null); }} className="w-full text-center text-sm font-semibold text-muted hover:text-ink">
             ← Back to sign in
