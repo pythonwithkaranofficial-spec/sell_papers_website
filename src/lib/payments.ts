@@ -42,37 +42,45 @@ type RzpRefund = { id: string; payment_id: string; amount: number; status: strin
 
 export const isLiveMode = razorpayKeyId.startsWith("rzp_live_");
 
-/** Latest payments and refunds straight from Razorpay, joined to our orders and customer accounts. */
-export async function getPaymentsReport(admin: AdminClient, users: User[], limit = 300) {
+/**
+ * Payments and refunds from Razorpay that belong to THIS website, joined to our orders and customers.
+ * A Razorpay account can serve several websites, so only payments for orders created here are kept.
+ */
+export async function getPaymentsReport(admin: AdminClient, users: User[], maxOrders = 1000) {
   if (!isRazorpayConfigured) return { configured: false as const };
+
+  // Our own orders (newest first) — these define which Razorpay payments are ours.
+  const { data: orderData, error: orderErr } = await admin
+    .from("orders")
+    .select("razorpay_order_id,user_id,item_type,subject_id,created_at,papers(set_no,subject_id)")
+    .not("razorpay_order_id", "is", null)
+    .order("created_at", { ascending: false })
+    .limit(maxOrders);
+  if (orderErr) return { configured: true as const, error: orderErr.message };
+  const orders = (orderData ?? []) as { razorpay_order_id: string; user_id: string; item_type: string; subject_id: string | null; created_at: string; papers: unknown }[];
+  if (!orders.length) return { configured: true as const, payments: [] as PaymentRow[], refunds: [] as RefundRow[] };
+  const ours = new Set(orders.map((o) => o.razorpay_order_id));
+  // Only ask Razorpay for payments made since our oldest listed order (a minute of slack).
+  const from = Math.floor(Math.min(...orders.map((o) => new Date(o.created_at).getTime())) / 1000) - 60;
+
   const rzp = razorpay();
   const payments: RzpPayment[] = [];
   const refunds: RzpRefund[] = [];
   try {
-    for (let skip = 0; skip < limit; skip += 100) {
-      const page = (await rzp.payments.all({ count: 100, skip })) as unknown as { items: RzpPayment[] };
-      payments.push(...page.items);
+    for (let skip = 0; skip < 5000; skip += 100) {
+      const page = (await rzp.payments.all({ from, count: 100, skip })) as unknown as { items: RzpPayment[] };
+      payments.push(...page.items.filter((p) => p.order_id && ours.has(p.order_id)));
       if (page.items.length < 100) break;
     }
-    for (let skip = 0; skip < limit; skip += 100) {
-      const page = (await rzp.refunds.all({ count: 100, skip })) as unknown as { items: RzpRefund[] };
-      refunds.push(...page.items);
+    const ourPayments = new Set(payments.map((p) => p.id));
+    for (let skip = 0; skip < 5000; skip += 100) {
+      const page = (await rzp.refunds.all({ from, count: 100, skip })) as unknown as { items: RzpRefund[] };
+      refunds.push(...page.items.filter((r) => ourPayments.has(r.payment_id)));
       if (page.items.length < 100) break;
     }
   } catch (e) {
     const err = e as { error?: { description?: string }; message?: string };
     return { configured: true as const, error: err.error?.description || err.message || "Could not reach Razorpay" };
-  }
-
-  // Link each Razorpay payment to our order (item + customer account).
-  const orderIds = [...new Set(payments.map((p) => p.order_id).filter(Boolean))] as string[];
-  const orders: { razorpay_order_id: string; user_id: string; item_type: string; subject_id: string | null; papers: unknown }[] = [];
-  for (let i = 0; i < orderIds.length; i += 200) {
-    const { data } = await admin
-      .from("orders")
-      .select("razorpay_order_id,user_id,item_type,subject_id,papers(set_no,subject_id)")
-      .in("razorpay_order_id", orderIds.slice(i, i + 200));
-    orders.push(...((data ?? []) as typeof orders));
   }
   const { data: profiles } = await admin.from("profiles").select("id,full_name").limit(20000);
   const nameOf = new Map((profiles ?? []).map((p) => [p.id as string, (p.full_name as string | null) ?? null]));
