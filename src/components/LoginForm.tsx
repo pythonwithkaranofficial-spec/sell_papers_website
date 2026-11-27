@@ -3,7 +3,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
-type Mode = "signin" | "signup" | "magic";
+type Mode = "signin" | "signup" | "magic" | "reset";
 
 export function LoginForm({ next, googleEnabled }: { next: string; googleEnabled: boolean }) {
   const router = useRouter();
@@ -42,6 +42,14 @@ export function LoginForm({ next, googleEnabled }: { next: string; googleEnabled
           router.push(next);
           router.refresh();
         } else setMsg({ ok: true, text: "Account created. Please confirm your email using the link we sent you." });
+      } else if (mode === "reset") {
+        const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent("/reset-password")}`;
+        const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
+        if (error) throw error;
+        setMsg({
+          ok: true,
+          text: "If an account exists for this email, we've sent a link to set a new password. Check your inbox (and spam folder).",
+        });
       } else {
         const { error } = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: callback() } });
         if (error) throw error;
@@ -73,18 +81,24 @@ export function LoginForm({ next, googleEnabled }: { next: string; googleEnabled
             key={m}
             type="button"
             onClick={() => { setMode(m); setMsg(null); setConfirm(""); }}
-            className={`rounded-full py-1.5 font-semibold ${mode === m ? "bg-white shadow-sm" : "text-muted"}`}
+            className={`rounded-full py-1.5 font-semibold ${mode === m || (mode === "reset" && m === "signin") ? "bg-white shadow-sm" : "text-muted"}`}
           >
             {l}
           </button>
         ))}
       </div>
+      {mode === "reset" && (
+        <div className="mt-6 rounded-xl bg-paper p-4 text-sm text-ink-soft">
+          <p className="font-semibold text-ink">Forgot your password?</p>
+          <p className="mt-1">Enter the email you signed up with and we&apos;ll send you a link to set a new password.</p>
+        </div>
+      )}
       <form onSubmit={submit} className="mt-6 space-y-4">
         {mode === "signup" && (
           <Field label="Full name" value={name} onChange={setName} autoComplete="name" />
         )}
         <Field label="Email" type="email" value={email} onChange={setEmail} autoComplete="email" required />
-        {mode !== "magic" && (
+        {(mode === "signin" || mode === "signup") && (
           <PasswordField
             label="Password"
             value={password}
@@ -92,6 +106,17 @@ export function LoginForm({ next, googleEnabled }: { next: string; googleEnabled
             autoComplete={mode === "signup" ? "new-password" : "current-password"}
             hint={mode === "signup" ? "At least 6 characters" : undefined}
           />
+        )}
+        {mode === "signin" && (
+          <p className="-mt-2 text-right">
+            <button
+              type="button"
+              onClick={() => { setMode("reset"); setMsg(null); }}
+              className="text-sm font-semibold text-ink-soft underline decoration-gold underline-offset-4 hover:text-ink"
+            >
+              Forgot password?
+            </button>
+          </p>
         )}
         {mode === "signup" && (
           <div>
@@ -104,8 +129,21 @@ export function LoginForm({ next, googleEnabled }: { next: string; googleEnabled
           </div>
         )}
         <button className="btn btn-primary w-full" disabled={busy}>
-          {busy ? "Please wait…" : mode === "signin" ? "Sign in" : mode === "signup" ? "Create account" : "Send me a sign-in link"}
+          {busy
+            ? "Please wait…"
+            : mode === "signin"
+              ? "Sign in"
+              : mode === "signup"
+                ? "Create account"
+                : mode === "reset"
+                  ? "Send reset link"
+                  : "Send me a sign-in link"}
         </button>
+        {mode === "reset" && (
+          <button type="button" onClick={() => { setMode("signin"); setMsg(null); }} className="w-full text-center text-sm font-semibold text-muted hover:text-ink">
+            ← Back to sign in
+          </button>
+        )}
       </form>
       {googleEnabled && (
         <>
@@ -145,7 +183,7 @@ function Field(props: {
   );
 }
 
-function PasswordField(props: {
+export function PasswordField(props: {
   label: string;
   value: string;
   onChange: (v: string) => void;
