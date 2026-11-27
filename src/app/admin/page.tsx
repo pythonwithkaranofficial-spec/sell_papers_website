@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AdminSetRow, AdminSubjectPrice } from "@/components/AdminControls";
-import { CLASSES, SUBJECTS, subjectsFor } from "@/lib/catalog";
+import { CLASSES, SUBJECTS, setTitle, subjectsFor } from "@/lib/catalog";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createAdminClient, getUser, isAdmin } from "@/lib/supabase/server";
 
@@ -77,7 +77,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
                 <AdminSetRow
                   key={p.id}
                   paperId={p.id}
-                  title={p.title}
+                  title={setTitle(subject, p.set_no)}
                   pricePaise={p.price_paise}
                   published={p.is_published}
                   files={(p.paper_files as { kind: string; file_name: string; size_bytes: number | null }[]) ?? []}

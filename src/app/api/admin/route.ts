@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { DEFAULT_BUCKET, resolveStoragePath } from "@/lib/storage";
 import { createAdminClient, getUser, isAdmin } from "@/lib/supabase/server";
 
 const KINDS = ["docx", "pdf", "answer_key"] as const;
@@ -24,7 +25,7 @@ export async function POST(req: Request) {
       if (!paper) return NextResponse.json({ error: "paper not found" }, { status: 404 });
       const ext = kind === "docx" ? "docx" : "pdf";
       const path = `${paper.subject_id}/set-${String(paper.set_no).padStart(2, "0")}/${kind}-${Date.now()}.${ext}`;
-      const { data, error } = await admin.storage.from("papers").createSignedUploadUrl(path);
+      const { data, error } = await admin.storage.from(DEFAULT_BUCKET).createSignedUploadUrl(path);
       if (error || !data) return NextResponse.json({ error: error?.message || "upload url failed" }, { status: 500 });
       return NextResponse.json({ path, token: data.token });
     }
@@ -35,14 +36,18 @@ export async function POST(req: Request) {
         { onConflict: "paper_id,kind" },
       );
       if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-      if (old?.storage_path && old.storage_path !== b.path) await admin.storage.from("papers").remove([old.storage_path]);
+      if (old?.storage_path && old.storage_path !== b.path) {
+        const o = resolveStoragePath(old.storage_path);
+        await admin.storage.from(o.bucket).remove([o.path]);
+      }
       await admin.from("papers").update({ is_published: true, updated_at: new Date().toISOString() }).eq("id", paperId);
       return NextResponse.json({ ok: true });
     }
     case "delete-file": {
       const { data: f } = await admin.from("paper_files").select("id,storage_path").eq("paper_id", paperId).eq("kind", kind).maybeSingle();
       if (f) {
-        await admin.storage.from("papers").remove([f.storage_path]);
+        const o = resolveStoragePath(f.storage_path);
+        await admin.storage.from(o.bucket).remove([o.path]);
         await admin.from("paper_files").delete().eq("id", f.id);
       }
       const { count } = await admin.from("paper_files").select("id", { count: "exact", head: true }).eq("paper_id", paperId);

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { downloadName, subjectById, type FileKind } from "@/lib/catalog";
 import { userOwnsPaper } from "@/lib/data";
+import { resolveStoragePath } from "@/lib/storage";
 import { createAdminClient, getUser, isAdmin } from "@/lib/supabase/server";
 
 // GET /api/download?paper=<paperId>&kind=docx|pdf|answer_key
@@ -27,7 +28,8 @@ export async function GET(req: Request) {
   const paper = file.papers as unknown as { set_no: number; subject_id: string } | null;
   const subject = paper ? subjectById(paper.subject_id) : undefined;
   const name = subject && paper ? downloadName(subject, paper.set_no, kind) : undefined;
-  const { data, error } = await admin.storage.from("papers").createSignedUrl(file.storage_path, 120, { download: name ?? true });
+  const { bucket, path } = resolveStoragePath(file.storage_path);
+  const { data, error } = await admin.storage.from(bucket).createSignedUrl(path, 120, { download: name ?? true });
   if (error || !data) return NextResponse.json({ error: "Could not create download link." }, { status: 500 });
   return NextResponse.redirect(data.signedUrl);
 }

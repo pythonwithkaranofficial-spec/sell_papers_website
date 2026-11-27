@@ -59,6 +59,19 @@ Sign in with an email listed in `ADMIN_EMAILS`, open **/admin**, pick a subject 
 A set goes on sale automatically once a file is uploaded. Prices per set and per subject bundle are
 editable there (defaults ₹49 per set, ₹999 per subject bundle — see `src/lib/site.ts`).
 
+## Linking files uploaded in the Supabase dashboard
+
+If you upload set files straight into Storage buckets (any folder layout; file names like
+`Mathematics_Standard_Set_7.pdf` / `.docx`), link them to their sets with:
+
+```bash
+node --env-file=.env.local scripts/sync-papers.mjs           # dry run — shows what would change
+node --env-file=.env.local scripts/sync-papers.mjs --apply   # links files and puts the sets on sale
+```
+
+Keep those buckets **private**. The site serves files only through short-lived signed links, so it works with private buckets.
+Buyers always see names with spaces ("Mathematics Standard Set 7"); storage keeps the underscores.
+
 ## How purchases are protected
 
 - Prices are read from the database on the server; the browser never decides the amount.

@@ -23,10 +23,10 @@ export type SubjectDetail = {
   live: boolean; // false = placeholder mode (Supabase not connected yet)
 };
 
-function placeholderSets(): SetInfo[] {
+function placeholderSets(subject: Subject): SetInfo[] {
   return SET_NUMBERS.map((n) => ({
     setNo: n,
-    title: setTitle(n),
+    title: setTitle(subject, n),
     paperId: null,
     pricePaise: defaultPrices.setPaise,
     published: false,
@@ -41,7 +41,7 @@ export async function getSubjectDetail(subject: Subject, userId: string | null):
     bundlePricePaise: defaultPrices.subjectBundlePaise,
     bundleOnSale: true,
     ownsBundle: false,
-    sets: placeholderSets(),
+    sets: placeholderSets(subject),
     live: false,
   };
   if (!isSupabaseConfigured) return base;
@@ -70,11 +70,11 @@ export async function getSubjectDetail(subject: Subject, userId: string | null):
     const byNo = new Map((papers ?? []).map((p) => [p.set_no as number, p]));
     const sets = SET_NUMBERS.map((n) => {
       const p = byNo.get(n);
-      if (!p) return placeholderSets()[n - 1];
+      if (!p) return base.sets[n - 1];
       const files = ((p.paper_files as { kind: FileKind }[] | null) ?? []).map((f) => f.kind);
       return {
         setNo: n,
-        title: p.title as string,
+        title: setTitle(subject, n),
         paperId: p.id as string,
         pricePaise: p.price_paise as number,
         published: Boolean(p.is_published) && files.length > 0,
@@ -192,7 +192,7 @@ export async function getLibrary(userId: string): Promise<{ items: LibraryItem[]
       subject,
       set: {
         setNo: p.set_no as number,
-        title: p.title as string,
+        title: setTitle(subject, p.set_no as number),
         paperId: p.id as string,
         pricePaise: p.price_paise as number,
         published: Boolean(p.is_published) && files.length > 0,

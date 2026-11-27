@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { subjectById } from "@/lib/catalog";
+import { setTitle, subjectById } from "@/lib/catalog";
 import { isRazorpayConfigured, razorpay, razorpayKeyId } from "@/lib/razorpay";
 import { site } from "@/lib/site";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
@@ -34,7 +34,8 @@ export async function POST(req: Request) {
       .limit(1);
     if (owned?.length) return NextResponse.json({ error: "You already own this set." }, { status: 409 });
     amount = paper.price_paise;
-    description = `${subjectById(paper.subject_id)?.name ?? "Paper"} — ${paper.title}`;
+    const subject = subjectById(paper.subject_id);
+    description = subject ? setTitle(subject, paper.set_no) : `Set ${paper.set_no}`;
     Object.assign(row, { item_type: "paper", paper_id: paper.id });
   } else if (body.type === "subject" && body.subjectId) {
     const { data: subj } = await admin
@@ -51,7 +52,7 @@ export async function POST(req: Request) {
       .limit(1);
     if (owned?.length) return NextResponse.json({ error: "You already own this bundle." }, { status: 409 });
     amount = subj.bundle_price_paise;
-    description = `Class ${subj.class_level} ${subj.name} — all sets`;
+    description = `Class ${subj.class_level} ${subjectById(subj.id)?.name ?? subj.name} — all sets`;
     Object.assign(row, { item_type: "subject", subject_id: subj.id });
   } else {
     return NextResponse.json({ error: "Invalid request." }, { status: 400 });

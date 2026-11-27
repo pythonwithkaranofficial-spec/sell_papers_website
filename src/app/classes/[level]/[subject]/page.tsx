@@ -315,9 +315,8 @@ function SetCard({ set, signedIn, returnTo }: { set: SetInfo; signedIn: boolean;
               <FileBadge kind={k.kind} small />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium">{k.label}</p>
-                <p className="text-xs text-muted">
-                  {k.format}
-                  {has || set.published ? "" : " · being prepared"}
+                <p className="truncate text-xs text-muted">
+                  {has ? `${set.title}.${k.kind === "docx" ? "docx" : "pdf"}` : `${k.format}${set.published ? "" : " · being prepared"}`}
                 </p>
               </div>
               {set.owned && has && set.paperId && (

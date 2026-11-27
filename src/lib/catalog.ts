@@ -38,9 +38,9 @@ const s = (
 
 export const SUBJECTS: Subject[] = [
   // ---------------- Class 10 ----------------
-  s("10", "english-language-literature", "English Language & Literature", "184", "Languages", "📖", "Reading, writing, grammar and First Flight / Footprints Without Feet.", [80, 3]),
+  s("10", "english-language-literature", "English Language and Literature", "184", "Languages", "📖", "Reading, writing, grammar and First Flight / Footprints Without Feet.", [80, 3]),
   s("10", "hindi-a", "Hindi Course A", "002", "Languages", "🪔", "अपठित बोध, व्याकरण, क्षितिज-कृतिका और रचनात्मक लेखन।", [80, 3], "hi"),
-  s("10", "mathematics-standard", "Mathematics (Standard)", "041", "Core", "📐", "Number systems, algebra, geometry, trigonometry, mensuration, statistics.", [80, 3]),
+  s("10", "mathematics-standard", "Mathematics Standard", "041", "Core", "📐", "Number systems, algebra, geometry, trigonometry, mensuration, statistics.", [80, 3]),
   s("10", "science", "Science", "086", "Core", "🔬", "Chemistry, biology and physics with case-based and assertion–reason questions.", [80, 3]),
   s("10", "social-science", "Social Science", "087", "Core", "🌏", "History, geography, political science and economics, with map work.", [80, 3]),
   s("10", "information-technology", "Information Technology", "402", "Skill Subjects", "💻", "Employability skills plus digital documentation, spreadsheets and databases.", [50, 2]),
@@ -60,7 +60,7 @@ export const SUBJECTS: Subject[] = [
   s("12", "accountancy", "Accountancy", "055", "Commerce", "🧾", "Partnership, company accounts and analysis of financial statements.", [80, 3]),
   s("12", "business-studies", "Business Studies", "054", "Commerce", "💼", "Principles and functions of management, business finance and marketing.", [80, 3]),
   s("12", "physical-education", "Physical Education", "048", "Electives", "🏅", "Sports management, nutrition, yoga, physiology and training.", [70, 3]),
-  s("12", "fine-arts-painting", "Fine Arts (Painting)", "049", "Electives", "🎨", "Indian miniature schools, Bengal school and modern Indian art.", [30, 2]),
+  s("12", "fine-arts-painting", "Fine Arts Painting", "049", "Electives", "🎨", "Indian miniature schools, Bengal school and modern Indian art.", [30, 2]),
 ];
 
 export const CLASSES: { level: ClassLevel; title: string; subtitle: string }[] = [
@@ -138,14 +138,23 @@ export function subjectById(id: string) {
 
 export const SET_NUMBERS = Array.from({ length: SETS_PER_SUBJECT }, (_, i) => i + 1);
 
-/** "Paper 1 · Set 1" style label used everywhere. */
-export function setTitle(n: number) {
-  return `Paper ${n} · Set ${n}`;
+/**
+ * Name of a set as shown to buyers, e.g. "Mathematics Standard Set 1".
+ * Files in Supabase storage keep underscores ("Mathematics_Standard_Set_1.pdf");
+ * buyers always see spaces.
+ */
+export function setTitle(subject: Subject, n: number) {
+  return `${subject.name} Set ${n}`;
 }
 
-/** File name a buyer receives, e.g. "Physics Set-3.pdf". */
+/** Turns a stored file name like "Science_Set_1.pdf" into "Science Set 1.pdf". */
+export function displayFileName(storedName: string) {
+  return storedName.replace(/_+/g, " ").replace(/\s+/g, " ").trim();
+}
+
+/** File name a buyer receives, e.g. "Physics Set 3.pdf" (spaces, no underscores). */
 export function downloadName(subject: Subject, n: number, kind: FileKind) {
-  if (kind === "docx") return `${subject.name} Set-${n}.docx`;
-  if (kind === "answer_key") return `${subject.name} Set-${n} Answer Key.pdf`;
-  return `${subject.name} Set-${n}.pdf`;
+  if (kind === "docx") return `${setTitle(subject, n)}.docx`;
+  if (kind === "answer_key") return `${setTitle(subject, n)} Answer Key.pdf`;
+  return `${setTitle(subject, n)}.pdf`;
 }

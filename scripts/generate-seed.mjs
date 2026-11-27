@@ -30,7 +30,7 @@ while ((m = re.exec(src))) {
 }
 lines.push("");
 lines.push(
-  `insert into public.papers (subject_id, set_no, title, price_paise)\nselect s.id, n, 'Paper ' || n || ' · Set ' || n, ${setPaise}\nfrom public.subjects s cross join generate_series(1, ${sets}) as n\non conflict (subject_id, set_no) do nothing;`,
+  `insert into public.papers (subject_id, set_no, title, price_paise)\nselect s.id, n, s.name || ' Set ' || n, ${setPaise}\nfrom public.subjects s cross join generate_series(1, ${sets}) as n\non conflict (subject_id, set_no) do nothing;`,
 );
 lines.push("");
 writeFileSync(path.join(root, "supabase/seed.sql"), lines.join("\n"));
