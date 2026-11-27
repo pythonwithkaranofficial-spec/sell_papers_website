@@ -5,7 +5,8 @@ export const site = {
   tagline: "CBSE 2026-27 practice papers, built on the official pattern",
   description:
     "Premium CBSE Class 10 and Class 12 practice papers for session 2026-27 — 30 sets per subject, each following the official CBSE Sample Question Paper pattern, with complete answer keys and marking schemes.",
-  url: process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
+  // Trailing slashes are removed so links never come out as "https://site//page".
+  url: (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000").trim().replace(/\/+$/, ""),
   session: "2026-27",
   supportEmail: process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@example.com",
   supportPhone: process.env.NEXT_PUBLIC_SUPPORT_PHONE || "+91 00000 00000",
