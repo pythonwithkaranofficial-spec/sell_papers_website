@@ -100,7 +100,7 @@ export default async function Home() {
       <section className="hero-light relative overflow-hidden border-b border-line">
         <div className="mx-auto grid max-w-6xl items-center gap-14 px-4 pb-20 pt-16 sm:px-6 md:pb-24 md:pt-20 lg:grid-cols-[1.1fr_0.9fr]">
           <div>
-            <span className="chip border border-[#bfe8a0] bg-lime/50 py-1 text-teal">
+            <span className="chip border border-[#bcd0f5] bg-lime/50 py-1 text-teal">
               <Icon name="sparkles" className="h-3.5 w-3.5" /> CBSE Session {site.session} · Board Exams 2027
             </span>
             <h1 className="font-display balance mt-6 text-4xl leading-[1.04] sm:text-5xl lg:text-[3.7rem]">

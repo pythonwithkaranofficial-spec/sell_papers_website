@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
-/* Design tokens — clean white, black type and buttons, green / lime accents (Cashfree / Brevo inspired).
-   Token names are semantic: "gold" is the ACCENT colour (now green), "gold-bright" the accent on dark
-   backgrounds (lime), "teal" the success colour. Book covers keep their own fixed colours (--color-cover-*). */
+/* Design tokens — clean white, black type and buttons, blue accents (Cashfree / Brevo inspired layout).
+   Token names are semantic: "gold" is the ACCENT colour (blue), "gold-bright"/"lime" the light accent used on dark
+   backgrounds and the sign-in panel (light blue), "teal" the success colour (deep blue). Book covers keep their own fixed colours (--color-cover-*). */
 @theme {
   --color-ink: #0d0d0d;
   --color-ink-soft: #3b3b3b;
@@ -10,14 +10,14 @@
   --color-paper: #ffffff;
   --color-paper-deep: #f4f4f1;
   --color-line: #e8e6e3;
-  --color-gold: #00803f;
-  --color-gold-bright: #cef993;
-  --color-gold-soft: #ecfbd9;
-  --color-teal: #00763f;
-  --color-teal-soft: #e3f6ea;
+  --color-gold: #1d4ed8;
+  --color-gold-bright: #bcd7ff;
+  --color-gold-soft: #e8f0fe;
+  --color-teal: #1e40af;
+  --color-teal-soft: #e4ecfd;
   --color-muted: #6b6767;
-  --color-lime: #cef993;
-  --color-forest: #0f1d15;
+  --color-lime: #bcd7ff;
+  --color-forest: #0b1426;
   --color-cover-gold: #e0b45a;
   --font-sans: var(--font-dm), ui-sans-serif, system-ui, sans-serif;
   --font-display: var(--font-dm), ui-sans-serif, system-ui, sans-serif;
@@ -61,26 +61,26 @@ body {
   background-color: #fff;
 }
 
-/* light page top with soft green glows */
+/* light page top with soft blue glows */
 .hero-light {
   background-color: #fff;
   background-image:
-    radial-gradient(46rem 22rem at 12% -6%, rgba(206, 249, 147, 0.55), transparent 62%),
-    radial-gradient(42rem 22rem at 92% 0%, rgba(0, 173, 92, 0.16), transparent 60%),
+    radial-gradient(46rem 22rem at 12% -6%, rgba(147, 197, 253, 0.55), transparent 62%),
+    radial-gradient(42rem 22rem at 92% 0%, rgba(37, 99, 235, 0.16), transparent 60%),
     linear-gradient(180deg, #fff 70%, #f7f8f4);
 }
 
-/* dark sections: near-black green with a lime glow */
+/* dark sections: near-black navy with a soft blue glow */
 .hero-dark {
   background-color: var(--color-forest);
   background-image:
-    radial-gradient(50rem 26rem at 85% -10%, rgba(206, 249, 147, 0.16), transparent 60%),
-    radial-gradient(40rem 24rem at -10% 110%, rgba(0, 173, 92, 0.22), transparent 60%);
+    radial-gradient(50rem 26rem at 85% -10%, rgba(147, 197, 253, 0.16), transparent 60%),
+    radial-gradient(40rem 24rem at -10% 110%, rgba(37, 99, 235, 0.22), transparent 60%);
 }
 
 /* pale tinted panels (like Cashfree's product cards) */
 .tint-green {
-  background: linear-gradient(160deg, #f4fde9 0%, #e5f8d0 100%);
+  background: linear-gradient(160deg, #f1f6ff 0%, #dbe7ff 100%);
 }
 .tint-blue {
   background: linear-gradient(160deg, #eef6ff 0%, #dcecfb 100%);
@@ -101,8 +101,8 @@ body {
 }
 .card-hover:hover {
   transform: translateY(-3px);
-  border-color: #cfe9b8;
-  box-shadow: 0 2px 4px rgba(13, 13, 13, 0.05), 0 24px 40px -24px rgba(0, 90, 45, 0.35);
+  border-color: #c6d7f7;
+  box-shadow: 0 2px 4px rgba(13, 13, 13, 0.05), 0 24px 40px -24px rgba(29, 78, 216, 0.35);
 }
 
 /* ---------- buttons ---------- */
@@ -132,12 +132,12 @@ body {
 }
 /* main "buy" action: brand green */
 .btn-gold {
-  background: #00803f;
+  background: #1d4ed8;
   color: #fff;
-  box-shadow: 0 8px 20px -12px rgba(0, 128, 63, 0.9);
+  box-shadow: 0 8px 20px -12px rgba(29, 78, 216, 0.9);
 }
 .btn-gold:hover {
-  background: #006b34;
+  background: #1e40af;
 }
 /* lime highlight button (on dark sections) */
 .btn-lime {
@@ -145,7 +145,7 @@ body {
   color: var(--color-ink);
 }
 .btn-lime:hover {
-  background: #bdf27a;
+  background: #a5c8ff;
 }
 .btn-outline {
   border: 1px solid #d6d4d1;

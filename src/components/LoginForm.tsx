@@ -126,7 +126,7 @@ export function LoginForm({ googleEnabled }: { googleEnabled: boolean }) {
   }
 
   const [title, subtitle] = HEADINGS[mode];
-  const linkBtn = "font-semibold text-gold underline decoration-[#9fd9b7] underline-offset-4 hover:text-teal";
+  const linkBtn = "font-semibold text-gold underline decoration-[#a9c4f5] underline-offset-4 hover:text-teal";
 
   return (
     <div>
@@ -268,7 +268,7 @@ export function LoginForm({ googleEnabled }: { googleEnabled: boolean }) {
 }
 
 const INPUT =
-  "mt-1.5 w-full rounded-2xl border border-[#cfcfcf] bg-white px-4 py-2.5 text-[15px] shadow-[0_1px_2px_rgba(28,28,28,0.06)] outline-none transition focus:border-gold focus:ring-4 focus:ring-[#cef993]/50";
+  "mt-1.5 w-full rounded-2xl border border-[#cfcfcf] bg-white px-4 py-2.5 text-[15px] shadow-[0_1px_2px_rgba(28,28,28,0.06)] outline-none transition focus:border-gold focus:ring-4 focus:ring-[#bcd7ff]/50";
 
 function Label({ text, required, hint }: { text: string; required?: boolean; hint?: string }) {
   return (
