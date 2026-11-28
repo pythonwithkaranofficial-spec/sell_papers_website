@@ -35,18 +35,18 @@ export default async function ClassPage({ params }: { params: Promise<{ level: s
 
   return (
     <>
-      <section className="hero-dark overflow-hidden text-white">
+      <section className="hero-light overflow-hidden border-b border-line">
         <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-14 sm:px-6 lg:grid-cols-[1fr_auto]">
           <div>
-            <nav className="text-sm text-white/60">
-              <Link href="/" className="hover:text-white">
+            <nav className="text-sm text-muted">
+              <Link href="/" className="hover:text-ink">
                 Home
               </Link>{" "}
-              / <span className="text-white">{cls.title}</span>
+              / <span className="text-ink">{cls.title}</span>
             </nav>
-            <p className="eyebrow mt-6 !text-gold-bright">{cls.subtitle}</p>
-            <h1 className="font-display mt-2 text-4xl font-semibold sm:text-5xl">{cls.title} Practice Papers</h1>
-            <p className="mt-3 max-w-2xl text-white/70">
+            <p className="eyebrow mt-6 ">{cls.subtitle}</p>
+            <h1 className="font-display mt-2 text-4xl sm:text-5xl">{cls.title} Practice Papers</h1>
+            <p className="mt-3 max-w-2xl text-muted">
               {subjects.length} subjects · {SETS_PER_SUBJECT} sets each · built on the official CBSE {site.session} pattern, with complete
               answer keys{ready > 0 ? ` · ${ready} sets ready to download` : ""}.
             </p>
@@ -55,16 +55,16 @@ export default async function ClassPage({ params }: { params: Promise<{ level: s
                 <Link
                   key={c.level}
                   href={`/classes/${c.level}`}
-                  className={`btn !py-2 text-sm ${c.level === level ? "bg-white text-ink" : "btn-ghost-light"}`}
+                  className={`btn !py-2 text-sm ${c.level === level ? "btn-primary" : "btn-outline"}`}
                 >
                   {c.title}
                 </Link>
               ))}
-              <span className="mx-1 hidden w-px bg-white/15 sm:block" />
+              <span className="mx-1 hidden w-px bg-line sm:block" />
               {streams.map((st) => (
-                <a key={st} href={`#${st.toLowerCase().replace(/\s+/g, "-")}`} className="btn btn-ghost-light !py-2 text-sm">
+                <Link key={st} href={`#${st.toLowerCase().replace(/\s+/g, "-")}`} className="btn btn-outline !py-2 text-sm">
                   {st}
-                </a>
+                </Link>
               ))}
             </div>
           </div>

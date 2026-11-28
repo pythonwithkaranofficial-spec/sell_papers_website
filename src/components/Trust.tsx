@@ -2,7 +2,7 @@ import { site } from "@/lib/site";
 import { Icon, type IconName } from "./Icon";
 
 export const TRUST_POINTS: { icon: IconName; title: string; text: string }[] = [
-  { icon: "shield", title: "Secure checkout", text: "Payments by Razorpay — UPI, cards, net banking" },
+  { icon: "shield", title: "Secure checkout", text: "UPI, cards, net banking and wallets" },
   { icon: "bolt", title: "Instant download", text: "Files unlock the moment you pay" },
   { icon: "target", title: `${site.session} syllabus only`, text: "On the official CBSE sample paper pattern" },
   { icon: "clipboard", title: "Answer keys included", text: "Step-wise marking scheme with every set" },
@@ -32,7 +32,7 @@ export function TrustBar({ className = "" }: { className?: string }) {
 
 const METHODS = ["UPI", "RuPay", "Visa", "Mastercard", "Net banking", "Wallets"];
 
-/** Accepted payment methods + "secured by Razorpay" line. */
+/** Accepted payment methods + "secure payments" line. */
 export function PaymentMethods({ dark, className = "" }: { dark?: boolean; className?: string }) {
   return (
     <div className={className}>
@@ -49,7 +49,7 @@ export function PaymentMethods({ dark, className = "" }: { dark?: boolean; class
         ))}
       </ul>
       <p className={`mt-2 flex items-center gap-1.5 text-xs ${dark ? "text-white/55" : "text-muted"}`}>
-        <Icon name="lock" className="h-3.5 w-3.5" /> 100% secure payments processed by Razorpay. We never see your card or UPI details.
+        <Icon name="lock" className="h-3.5 w-3.5" /> 100% secure payments through an RBI-authorised payment gateway. We never see your card or UPI details.
       </p>
     </div>
   );

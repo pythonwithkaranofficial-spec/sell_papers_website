@@ -183,9 +183,9 @@ export default async function SubjectPage({ params }: { params: Promise<{ level:
                   </button>
                 )}
               </div>
-              <a href="#sets" className="mt-3 block text-center text-sm font-semibold text-ink-soft hover:text-gold">
+              <Link href="#sets" className="mt-3 block text-center text-sm font-semibold text-ink-soft hover:text-gold">
                 Or buy single sets from {formatINR(setPrice)} ↓
-              </a>
+              </Link>
               <div className="mt-5 space-y-2 border-t border-line pt-4 text-xs text-muted">
                 <p className="flex items-center gap-2">
                   <Icon name="bolt" className="h-4 w-4 text-gold" /> Instant download after payment

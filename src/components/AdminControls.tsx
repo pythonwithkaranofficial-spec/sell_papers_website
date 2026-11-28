@@ -42,12 +42,12 @@ export function AdminSetRow(props: {
   async function upload(kind: string, file: File) {
     const accept = kind === "docx" ? /\.docx$/i : /\.pdf$/i;
     if (!accept.test(file.name)) throw new Error(kind === "docx" ? "Choose a .docx file" : "Choose a .pdf file");
-    const { path, token } = await call({ action: "upload-url", paperId: props.paperId, kind });
-    const { error } = await createClient().storage.from("papers").uploadToSignedUrl(path, token, file, {
+    const { bucket, path, token } = await call({ action: "upload-url", paperId: props.paperId, kind });
+    const { error } = await createClient().storage.from(bucket).uploadToSignedUrl(path, token, file, {
       contentType: file.type || (kind === "docx" ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document" : "application/pdf"),
     });
     if (error) throw error;
-    await call({ action: "file-uploaded", paperId: props.paperId, kind, path, fileName: file.name, size: file.size });
+    await call({ action: "file-uploaded", paperId: props.paperId, kind, bucket, path, fileName: file.name, size: file.size });
   }
 
   return (

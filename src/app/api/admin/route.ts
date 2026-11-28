@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { findUserByEmail, isOwner, toPaise } from "@/lib/admin";
 import { SUBJECTS } from "@/lib/catalog";
 import { CATALOG_TAG } from "@/lib/data";
-import { DEFAULT_BUCKET, resolveStoragePath } from "@/lib/storage";
+import { DEFAULT_BUCKET, resolveStoragePath, toStoragePath } from "@/lib/storage";
 import { createAdminClient, getUser, isAdmin } from "@/lib/supabase/server";
 
 const KINDS = ["docx", "pdf", "answer_key"] as const;
@@ -49,19 +49,40 @@ async function handle(
       const { data: paper } = await admin.from("papers").select("subject_id,set_no").eq("id", paperId).maybeSingle();
       if (!paper) return NextResponse.json({ error: "paper not found" }, { status: 404 });
       const ext = kind === "docx" ? "docx" : "pdf";
-      const path = `${paper.subject_id}/set-${String(paper.set_no).padStart(2, "0")}/${kind}-${Date.now()}.${ext}`;
-      const { data, error } = await admin.storage.from(DEFAULT_BUCKET).createSignedUploadUrl(path);
+      // Upload into the bucket this subject's files already live in; otherwise into the private default bucket.
+      const { data: siblings } = await admin
+        .from("paper_files")
+        .select("storage_path,papers!inner(subject_id)")
+        .eq("papers.subject_id", paper.subject_id)
+        .like("storage_path", "storage://%")
+        .limit(1);
+      let bucket = siblings?.[0] ? resolveStoragePath(siblings[0].storage_path as string).bucket : DEFAULT_BUCKET;
+      if (bucket === DEFAULT_BUCKET) {
+        const { error: getErr } = await admin.storage.getBucket(DEFAULT_BUCKET);
+        if (getErr) {
+          const { error: mkErr } = await admin.storage.createBucket(DEFAULT_BUCKET, {
+            public: false,
+            fileSizeLimit: 20 * 1024 * 1024,
+            allowedMimeTypes: ["application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"],
+          });
+          if (mkErr && !/exist/i.test(mkErr.message)) bucket = "";
+        }
+      }
+      if (!bucket) return NextResponse.json({ error: "No storage bucket available for uploads." }, { status: 500 });
+      const path = `uploads/${paper.subject_id}/set-${String(paper.set_no).padStart(2, "0")}/${kind}-${Date.now()}.${ext}`;
+      const { data, error } = await admin.storage.from(bucket).createSignedUploadUrl(path);
       if (error || !data) return NextResponse.json({ error: error?.message || "upload url failed" }, { status: 500 });
-      return NextResponse.json({ path, token: data.token });
+      return NextResponse.json({ bucket, path, token: data.token });
     }
     case "file-uploaded": {
+      const storagePath = toStoragePath(String(b.bucket || DEFAULT_BUCKET), String(b.path));
       const { data: old } = await admin.from("paper_files").select("storage_path").eq("paper_id", paperId).eq("kind", kind).maybeSingle();
       const { error } = await admin.from("paper_files").upsert(
-        { paper_id: paperId, kind, storage_path: String(b.path), file_name: String(b.fileName || ""), size_bytes: Number(b.size || 0), uploaded_at: new Date().toISOString() },
+        { paper_id: paperId, kind, storage_path: storagePath, file_name: String(b.fileName || ""), size_bytes: Number(b.size || 0), uploaded_at: new Date().toISOString() },
         { onConflict: "paper_id,kind" },
       );
       if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-      if (old?.storage_path && old.storage_path !== b.path) {
+      if (old?.storage_path && old.storage_path !== storagePath) {
         const o = resolveStoragePath(old.storage_path);
         await admin.storage.from(o.bucket).remove([o.path]);
       }

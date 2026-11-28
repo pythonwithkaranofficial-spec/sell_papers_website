@@ -1,21 +1,28 @@
 @import "tailwindcss";
 
+/* Design tokens — clean white, black type and buttons, green / lime accents (Cashfree / Brevo inspired).
+   Token names are semantic: "gold" is the ACCENT colour (now green), "gold-bright" the accent on dark
+   backgrounds (lime), "teal" the success colour. Book covers keep their own fixed colours (--color-cover-*). */
 @theme {
-  --color-ink: #0b1730;
-  --color-ink-soft: #24324f;
-  --color-ink-deep: #071022;
-  --color-paper: #fbf8f2;
-  --color-paper-deep: #f3ede1;
-  --color-line: #e6dfd0;
-  --color-gold: #a8761f;
-  --color-gold-bright: #e0b45a;
-  --color-gold-soft: #f6ebd0;
-  --color-teal: #0c6966;
-  --color-teal-soft: #dcefec;
-  --color-muted: #5a6377;
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  --font-display: var(--font-fraunces), Georgia, serif;
-  --font-hindi: "Nirmala UI", "Noto Sans Devanagari", var(--font-inter), sans-serif;
+  --color-ink: #0d0d0d;
+  --color-ink-soft: #3b3b3b;
+  --color-ink-deep: #0d0d0d;
+  --color-paper: #ffffff;
+  --color-paper-deep: #f4f4f1;
+  --color-line: #e8e6e3;
+  --color-gold: #00803f;
+  --color-gold-bright: #cef993;
+  --color-gold-soft: #ecfbd9;
+  --color-teal: #00763f;
+  --color-teal-soft: #e3f6ea;
+  --color-muted: #6b6767;
+  --color-lime: #cef993;
+  --color-forest: #0f1d15;
+  --color-cover-gold: #e0b45a;
+  --font-sans: var(--font-dm), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-dm), ui-sans-serif, system-ui, sans-serif;
+  --font-cover: var(--font-fraunces), Georgia, serif;
+  --font-hindi: "Nirmala UI", "Noto Sans Devanagari", var(--font-dm), sans-serif;
 }
 
 html {
@@ -34,7 +41,13 @@ body {
    To override one of their properties in markup, use the important modifier (e.g. `!border-gold`). */
 .font-display {
   font-family: var(--font-display);
-  letter-spacing: -0.018em;
+  font-weight: 500;
+  letter-spacing: -0.035em;
+}
+/* book covers keep their classic serif */
+.font-cover {
+  font-family: var(--font-cover);
+  letter-spacing: -0.015em;
 }
 
 .balance {
@@ -43,32 +56,44 @@ body {
 
 /* ---------- surfaces ---------- */
 
-/* subtle ruled-paper texture */
+/* (kept for compatibility) */
 .ruled {
-  background-image: repeating-linear-gradient(
-    to bottom,
-    transparent 0,
-    transparent 31px,
-    rgba(11, 23, 48, 0.045) 31px,
-    rgba(11, 23, 48, 0.045) 32px
-  );
+  background-color: #fff;
 }
 
-/* deep navy hero with a warm glow and a faint dot grid */
-.hero-dark {
-  background-color: var(--color-ink);
+/* light page top with soft green glows */
+.hero-light {
+  background-color: #fff;
   background-image:
-    radial-gradient(60rem 30rem at 85% -10%, rgba(224, 180, 90, 0.22), transparent 60%),
-    radial-gradient(40rem 26rem at -10% 110%, rgba(12, 105, 102, 0.35), transparent 60%),
-    radial-gradient(rgba(255, 255, 255, 0.07) 1px, transparent 1px);
-  background-size: auto, auto, 22px 22px;
+    radial-gradient(46rem 22rem at 12% -6%, rgba(206, 249, 147, 0.55), transparent 62%),
+    radial-gradient(42rem 22rem at 92% 0%, rgba(0, 173, 92, 0.16), transparent 60%),
+    linear-gradient(180deg, #fff 70%, #f7f8f4);
+}
+
+/* dark sections: near-black green with a lime glow */
+.hero-dark {
+  background-color: var(--color-forest);
+  background-image:
+    radial-gradient(50rem 26rem at 85% -10%, rgba(206, 249, 147, 0.16), transparent 60%),
+    radial-gradient(40rem 24rem at -10% 110%, rgba(0, 173, 92, 0.22), transparent 60%);
+}
+
+/* pale tinted panels (like Cashfree's product cards) */
+.tint-green {
+  background: linear-gradient(160deg, #f4fde9 0%, #e5f8d0 100%);
+}
+.tint-blue {
+  background: linear-gradient(160deg, #eef6ff 0%, #dcecfb 100%);
+}
+.tint-grey {
+  background: linear-gradient(160deg, #fafaf8 0%, #efefec 100%);
 }
 
 .card {
   background: #fff;
   border: 1px solid var(--color-line);
-  border-radius: 1rem;
-  box-shadow: 0 1px 2px rgba(11, 23, 48, 0.04), 0 10px 28px -18px rgba(11, 23, 48, 0.22);
+  border-radius: 1.25rem;
+  box-shadow: 0 1px 2px rgba(13, 13, 13, 0.04), 0 12px 30px -22px rgba(13, 13, 13, 0.25);
 }
 
 .card-hover {
@@ -76,8 +101,8 @@ body {
 }
 .card-hover:hover {
   transform: translateY(-3px);
-  border-color: #d9cdb3;
-  box-shadow: 0 2px 4px rgba(11, 23, 48, 0.05), 0 22px 40px -22px rgba(11, 23, 48, 0.35);
+  border-color: #cfe9b8;
+  box-shadow: 0 2px 4px rgba(13, 13, 13, 0.05), 0 24px 40px -24px rgba(0, 90, 45, 0.35);
 }
 
 /* ---------- buttons ---------- */
@@ -87,9 +112,10 @@ body {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  border-radius: 9999px;
-  padding: 0.7rem 1.35rem;
-  font-weight: 600;
+  border-radius: 0.75rem;
+  padding: 0.7rem 1.3rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
   font-size: 0.925rem;
   white-space: nowrap;
   transition: background-color 0.15s, color 0.15s, box-shadow 0.15s, border-color 0.15s, transform 0.05s;
@@ -102,18 +128,27 @@ body {
   color: #fff;
 }
 .btn-primary:hover {
-  background: var(--color-ink-soft);
+  background: #2a2a2a;
 }
+/* main "buy" action: brand green */
 .btn-gold {
-  background: linear-gradient(180deg, #c48d2c, #a8761f);
+  background: #00803f;
   color: #fff;
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.25) inset, 0 8px 20px -10px rgba(168, 118, 31, 0.8);
+  box-shadow: 0 8px 20px -12px rgba(0, 128, 63, 0.9);
 }
 .btn-gold:hover {
-  background: linear-gradient(180deg, #b6821f, #946717);
+  background: #006b34;
+}
+/* lime highlight button (on dark sections) */
+.btn-lime {
+  background: var(--color-lime);
+  color: var(--color-ink);
+}
+.btn-lime:hover {
+  background: #bdf27a;
 }
 .btn-outline {
-  border: 1px solid var(--color-line);
+  border: 1px solid #d6d4d1;
   background: #fff;
   color: var(--color-ink);
 }
@@ -151,10 +186,10 @@ body {
 }
 
 .eyebrow {
-  font-size: 0.78rem;
-  font-weight: 700;
+  font-size: 0.75rem;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.12em;
   color: var(--color-gold);
 }
 
@@ -169,8 +204,8 @@ body {
   color: #fff;
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.15) inset,
-    0 2px 4px rgba(11, 23, 48, 0.15),
-    0 18px 30px -14px rgba(11, 23, 48, 0.55);
+    0 2px 4px rgba(13, 13, 13, 0.15),
+    0 18px 30px -14px rgba(13, 13, 13, 0.5);
 }
 .cover::before {
   /* binding / spine shading */
@@ -193,6 +228,8 @@ body {
 
 .prose-legal h2 {
   font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.02em;
   font-size: 1.35rem;
   margin: 2rem 0 0.6rem;
 }

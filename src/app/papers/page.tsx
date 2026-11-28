@@ -20,25 +20,25 @@ export default async function PapersPage() {
 
   return (
     <>
-      <section className="hero-dark text-white">
+      <section className="hero-light border-b border-line">
         <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
-          <nav className="text-sm text-white/60">
-            <Link href="/" className="hover:text-white">
+          <nav className="text-sm text-muted">
+            <Link href="/" className="hover:text-ink">
               Home
             </Link>{" "}
-            / <span className="text-white">All papers</span>
+            / <span className="text-ink">All papers</span>
           </nav>
-          <p className="eyebrow mt-6 !text-gold-bright">CBSE Session {site.session}</p>
-          <h1 className="font-display mt-2 text-4xl font-semibold sm:text-5xl">All practice papers</h1>
-          <p className="mt-3 max-w-2xl text-white/70">
+          <p className="eyebrow mt-6 ">CBSE Session {site.session}</p>
+          <h1 className="font-display mt-2 text-4xl sm:text-5xl">All practice papers</h1>
+          <p className="mt-3 max-w-2xl text-muted">
             {SUBJECTS.length} subjects across Class 10 and Class 12 · {SETS_PER_SUBJECT} sets per subject
             {totalAvailable > 0 ? ` · ${totalAvailable} sets ready to download now` : ""}.
           </p>
           <div className="mt-7 flex flex-wrap gap-2">
             {CLASSES.map((c) => (
-              <a key={c.level} href={`#class-${c.level}`} className="btn btn-ghost-light !py-2 text-sm">
+              <Link key={c.level} href={`#class-${c.level}`} className="btn btn-outline !py-2 text-sm">
                 {c.title} · {subjectsFor(c.level).length} subjects
-              </a>
+              </Link>
             ))}
           </div>
         </div>

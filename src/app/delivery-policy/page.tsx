@@ -15,7 +15,7 @@ export default function Delivery() {
         <li>For a subject bundle, sets uploaded later are added to your account automatically at no extra cost.</li>
       </ul>
       <h2>Delays</h2>
-      <p>If a purchase does not appear within 15 minutes of payment, write to {site.supportEmail} with your Razorpay payment ID and we will fix it promptly.</p>
+      <p>If a purchase does not appear within 15 minutes of payment, write to {site.supportEmail} with your payment / transaction ID and we will fix it promptly.</p>
     </LegalPage>
   );
 }

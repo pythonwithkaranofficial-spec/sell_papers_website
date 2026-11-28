@@ -12,7 +12,7 @@ export default function Contact() {
       <h1 className="font-display mt-2 text-4xl font-semibold">We&apos;re here to help</h1>
       <p className="mt-4 max-w-2xl text-ink-soft">
         Questions about a paper, a payment or your account? Write to us and we usually reply within one working day. For payment
-        issues, please include your Razorpay payment ID.
+        issues, please include your payment / transaction ID.
       </p>
       <div className="mt-10 grid gap-5 sm:grid-cols-2">
         <a href={`mailto:${site.supportEmail}`} className="card card-hover group p-6">
@@ -27,7 +27,17 @@ export default function Contact() {
             <Icon name="phone" />
           </span>
           <p className="mt-4 text-sm font-semibold text-muted">Phone / WhatsApp</p>
-          <p className="mt-1 text-lg font-semibold">{site.supportPhone}</p>
+          <a href={`tel:${site.supportPhone.replace(/[^\d+]/g, "")}`} className="mt-1 block text-lg font-semibold hover:text-gold">
+            {site.supportPhone}
+          </a>
+          <a
+            href={`https://wa.me/${site.supportPhone.replace(/\D/g, "")}`}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-2 inline-block text-sm font-semibold text-gold underline underline-offset-4"
+          >
+            Chat on WhatsApp
+          </a>
         </div>
         <div className="card p-6 sm:col-span-2">
           <span className="grid h-11 w-11 place-items-center rounded-xl bg-gold-soft text-gold">

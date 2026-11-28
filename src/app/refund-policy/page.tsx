@@ -15,7 +15,7 @@ export default function Refund() {
         <li>A file is corrupted or unreadable and we cannot provide a working replacement within 72 hours.</li>
       </ul>
       <h2>How to request</h2>
-      <p>Email {site.supportEmail} within 7 days of purchase with your registered email address and the Razorpay payment ID. Approved refunds are credited to the original payment method within 5–7 working days.</p>
+      <p>Email {site.supportEmail} within 7 days of purchase with your registered email address and the payment / transaction ID. Approved refunds are credited to the original payment method within 5–7 working days.</p>
       <h2>Not refundable</h2>
       <p>Change of mind after a file has been downloaded, or purchases made by mistake for a different class or subject once downloaded.</p>
     </LegalPage>

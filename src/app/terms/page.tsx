@@ -18,7 +18,7 @@ export default function Terms() {
       <h2>Accounts</h2>
       <p>You are responsible for keeping your login details secure. Purchases are linked to your account and remain available for download under “My papers”.</p>
       <h2>Pricing and payment</h2>
-      <p>Prices are shown in Indian Rupees and include applicable taxes. Payments are processed securely by Razorpay; we do not store card, UPI or bank details.</p>
+      <p>Prices are shown in Indian Rupees and include applicable taxes. Payments are processed securely by our RBI-authorised payment gateway; we do not store card, UPI or bank details.</p>
       <h2>Accuracy</h2>
       <p>We take great care over every question and answer. If you find an error, write to {site.supportEmail} and we will correct it and update the file for all buyers.</p>
       <h2>Liability</h2>

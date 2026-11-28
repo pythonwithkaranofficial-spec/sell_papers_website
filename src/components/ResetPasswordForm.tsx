@@ -61,10 +61,10 @@ export function ResetPasswordForm({ email }: { email: string }) {
           </p>
         )}
       </div>
-      <button className="btn btn-primary w-full" disabled={busy}>
+      <button className="btn btn-primary btn-lg w-full !rounded-2xl" disabled={busy}>
         {busy ? "Please wait…" : "Save new password"}
       </button>
-      {msg && <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{msg}</p>}
+      {msg && <p className="rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700">{msg}</p>}
       <p className="text-center text-sm">
         <Link href="/account" className="font-semibold text-muted hover:text-ink">
           Skip for now

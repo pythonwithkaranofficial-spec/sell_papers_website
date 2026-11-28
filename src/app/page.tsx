@@ -26,7 +26,7 @@ const faqs = [
   },
   {
     q: "How do I download after paying?",
-    a: "Create a free account, pay through Razorpay (UPI, cards, net banking or wallets), and the files unlock instantly under “My papers”. You can download them again any time.",
+    a: "Create a free account, pay securely by UPI, card, net banking or wallet, and the files unlock instantly under “My papers”. You can download them again any time.",
   },
   {
     q: "Can I buy all the papers of a subject together?",
@@ -38,7 +38,7 @@ const faqs = [
   },
   {
     q: "Is my payment safe? What if something goes wrong?",
-    a: "Payments are processed by Razorpay, an RBI-authorised payment aggregator; we never see your card or UPI details. If you are charged and your papers don't appear, or a file is unreadable and we can't replace it, you get a refund as per our refund policy.",
+    a: "Payments are processed by an RBI-authorised payment gateway; we never see your card or UPI details. If you are charged and your papers don't appear, or a file is unreadable and we can't replace it, you get a refund as per our refund policy.",
   },
 ];
 
@@ -74,7 +74,7 @@ const process: { icon: IconName; title: string; text: string }[] = [
 const guarantees: { icon: IconName; title: string; text: string; href: string }[] = [
   { icon: "bolt", title: "Delivered instantly", text: "Your files unlock as soon as payment succeeds. If they don't appear within 15 minutes, we fix it.", href: "/delivery-policy" },
   { icon: "refresh", title: "Fair refund policy", text: "Charged twice, papers not delivered, or a file we can't replace? You get your money back.", href: "/refund-policy" },
-  { icon: "lock", title: "Private & secure", text: "Payments by Razorpay. Your files are stored privately and only you can download them.", href: "/privacy" },
+  { icon: "lock", title: "Private & secure", text: "Secure, RBI-authorised payment gateway. Your files are stored privately and only you can download them.", href: "/privacy" },
   { icon: "headset", title: "Real human support", text: "Questions about a paper or a payment? Write to us — we usually reply within one working day.", href: "/contact" },
 ];
 
@@ -97,47 +97,47 @@ export default async function Home() {
   return (
     <>
       {/* ---------------- hero ---------------- */}
-      <section className="hero-dark relative overflow-hidden text-white">
+      <section className="hero-light relative overflow-hidden border-b border-line">
         <div className="mx-auto grid max-w-6xl items-center gap-14 px-4 pb-20 pt-16 sm:px-6 md:pb-24 md:pt-20 lg:grid-cols-[1.1fr_0.9fr]">
           <div>
-            <span className="chip border border-gold-bright/30 bg-gold-bright/10 py-1 text-gold-bright">
+            <span className="chip border border-[#bfe8a0] bg-lime/50 py-1 text-teal">
               <Icon name="sparkles" className="h-3.5 w-3.5" /> CBSE Session {site.session} · Board Exams 2027
             </span>
-            <h1 className="font-display balance mt-6 text-4xl font-semibold leading-[1.06] sm:text-5xl lg:text-[3.6rem]">
-              Board exam practice papers, made the way <span className="text-gold-bright">CBSE sets them</span>.
+            <h1 className="font-display balance mt-6 text-4xl leading-[1.04] sm:text-5xl lg:text-[3.7rem]">
+              Board exam practice papers, made the way <span className="text-gold">CBSE sets them</span>.
             </h1>
-            <p className="mt-6 max-w-xl text-lg leading-relaxed text-white/75">
+            <p className="mt-6 max-w-xl text-lg leading-relaxed text-muted">
               Full-length practice sets for Class 10 and Class 12 — {SETS_PER_SUBJECT} per subject, each with an editable Word paper and a
               print-ready PDF with the complete answer key and marking scheme.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Link href="/classes/10" className="btn btn-gold btn-lg">
+              <Link href="/classes/10" className="btn btn-primary btn-lg">
                 Shop Class 10 papers <Icon name="arrowRight" className="h-4 w-4" />
               </Link>
-              <Link href="/classes/12" className="btn btn-ghost-light btn-lg">
+              <Link href="/classes/12" className="btn btn-outline btn-lg">
                 Shop Class 12 papers
               </Link>
             </div>
-            <ul className="mt-7 flex flex-wrap gap-x-6 gap-y-2 text-sm text-white/70">
+            <ul className="mt-7 flex flex-wrap gap-x-6 gap-y-2 text-sm text-ink-soft">
               {[
-                ["lock", "Secure Razorpay checkout"],
+                ["lock", "Secure UPI & card checkout"],
                 ["bolt", "Instant download"],
                 ["checkCircle", "Answer keys included"],
               ].map(([icon, label]) => (
                 <li key={label} className="flex items-center gap-2">
-                  <Icon name={icon as IconName} className="h-4 w-4 text-gold-bright" /> {label}
+                  <Icon name={icon as IconName} className="h-4 w-4 text-gold" /> {label}
                 </li>
               ))}
             </ul>
-            <dl className="mt-10 grid max-w-lg grid-cols-3 gap-6 border-t border-white/10 pt-8">
+            <dl className="mt-10 grid max-w-lg grid-cols-3 gap-6 border-t border-line pt-8">
               {[
                 [String(SUBJECTS.length), "subjects"],
                 [String(SETS_PER_SUBJECT), "sets per subject"],
                 totalAvailable > 0 ? [String(totalAvailable), "sets ready now"] : ["2", "classes"],
               ].map(([v, l]) => (
                 <div key={l}>
-                  <dt className="font-display text-3xl font-semibold text-white sm:text-4xl">{v}</dt>
-                  <dd className="mt-1 text-sm text-white/60">{l}</dd>
+                  <dt className="font-display text-3xl sm:text-4xl">{v}</dt>
+                  <dd className="mt-1 text-sm text-muted">{l}</dd>
                 </div>
               ))}
             </dl>
@@ -232,11 +232,11 @@ export default async function Home() {
               <Link
                 key={c.level}
                 href={`/classes/${c.level}`}
-                className="hero-dark card-hover group relative block overflow-hidden rounded-3xl p-8 text-white"
+                className={`${c.level === "10" ? "tint-green" : "tint-blue"} card-hover group relative block overflow-hidden rounded-3xl border border-line p-8`}
               >
-                <p className="text-sm font-semibold text-gold-bright">{c.subtitle}</p>
-                <h3 className="font-display mt-1 text-4xl font-semibold">{c.title}</h3>
-                <p className="mt-2 text-sm text-white/70">
+                <p className="text-sm font-semibold text-gold">{c.subtitle}</p>
+                <h3 className="font-display mt-1 text-4xl">{c.title}</h3>
+                <p className="mt-2 text-sm text-muted">
                   {subs.length} subjects · {subs.length * SETS_PER_SUBJECT} practice sets
                   {ready > 0 ? ` · ${ready} ready to download` : ""}
                 </p>
@@ -249,12 +249,12 @@ export default async function Home() {
                 </div>
                 <ul className="mt-6 flex flex-wrap gap-1.5">
                   {subs.map((s) => (
-                    <li key={s.id} className="rounded-full border border-white/15 bg-white/5 px-2.5 py-1 text-xs text-white/80">
+                    <li key={s.id} className="rounded-full border border-black/10 bg-white/70 px-2.5 py-1 text-xs text-ink-soft">
                       {s.name}
                     </li>
                   ))}
                 </ul>
-                <p className="mt-7 inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-ink transition group-hover:bg-gold-bright">
+                <p className="mt-7 inline-flex items-center gap-2 rounded-xl bg-ink px-5 py-2.5 text-sm font-medium text-white transition group-hover:bg-gold">
                   Shop {c.title} papers <Icon name="arrowRight" className="h-4 w-4" />
                 </p>
               </Link>
@@ -429,7 +429,7 @@ export default async function Home() {
           {[
             ["search", "Find your subject", "Pick your class and subject and browse its sets."],
             ["user", "Create a free account", "Sign up with your email — it keeps your purchases safe."],
-            ["lock", "Pay securely", "UPI, cards, net banking or wallets through Razorpay."],
+            ["lock", "Pay securely", "UPI, cards, net banking or wallets — secure checkout."],
             ["download", "Download instantly", "Get the Word file and PDF with answer key in My papers."],
           ].map(([icon, t, d], i) => (
             <li key={t} className="card relative p-6">
@@ -487,7 +487,7 @@ export default async function Home() {
             Pick your class, choose a subject and download your first set in minutes.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <Link href="/classes/10" className="btn btn-gold btn-lg">
+            <Link href="/classes/10" className="btn btn-lime btn-lg">
               Class 10 papers
             </Link>
             <Link href="/classes/12" className="btn btn-ghost-light btn-lg">

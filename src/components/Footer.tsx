@@ -17,6 +17,7 @@ const columns = [
   {
     title: "Help",
     links: [
+      { href: "/about", label: "About us" },
       { href: "/#how-it-works", label: "How it works" },
       { href: "/#faq", label: "FAQ" },
       { href: "/account", label: "My papers" },
@@ -57,7 +58,10 @@ export function Footer() {
               </a>
             </li>
             <li className="flex items-center gap-2.5">
-              <Icon name="phone" className="h-4 w-4 text-gold-bright" /> {site.supportPhone}
+              <Icon name="phone" className="h-4 w-4 text-gold-bright" />
+              <a href={`tel:${site.supportPhone.replace(/[^\d+]/g, "")}`} className="hover:text-white">
+                {site.supportPhone}
+              </a>
             </li>
           </ul>
         </div>
