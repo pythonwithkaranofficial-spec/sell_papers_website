@@ -72,6 +72,16 @@ node --env-file=.env.local scripts/sync-papers.mjs --apply   # links files and p
 Keep those buckets **private**. The site serves files only through short-lived signed links, so it works with private buckets.
 Buyers always see names with spaces ("Mathematics Standard Set 7"); storage keeps the underscores.
 
+## Payment gateway: Cashfree or Razorpay
+
+The shop works with **Cashfree** (preferred) or **Razorpay**. If `CASHFREE_APP_ID` and `CASHFREE_SECRET_KEY` are set it uses
+Cashfree; otherwise Razorpay. `PAYMENT_PROVIDER=cashfree|razorpay` forces one.
+
+Cashfree setup: API keys (TEST → `CASHFREE_ENV=sandbox`, LIVE → `CASHFREE_ENV=production`), whitelist the website domain
+(Developers → Whitelisting), and add the webhook `https://<domain>/api/cashfree/webhook` (payment success, failed,
+user dropped, refund status). Cashfree needs the buyer's mobile number; the Buy button asks for it once and saves it
+to the profile.
+
 ## How purchases are protected
 
 - Prices are read from the database on the server; the browser never decides the amount.

@@ -1,6 +1,8 @@
 import "server-only";
 import type { User } from "@supabase/supabase-js";
 import { setTitle, subjectById } from "./catalog";
+import { cashfreeMode, getCashfreePayments, getCashfreeRefunds, isCashfreeConfigured } from "./cashfree";
+import { activeGateway } from "./gateway";
 import { isRazorpayConfigured, razorpay, razorpayKeyId } from "./razorpay";
 import { createAdminClient } from "./supabase/server";
 
@@ -40,13 +42,22 @@ type RzpPayment = {
 };
 type RzpRefund = { id: string; payment_id: string; amount: number; status: string; created_at: number };
 
-export const isLiveMode = razorpayKeyId.startsWith("rzp_live_");
+/** Which gateway the admin Payments tab reads, and whether it is real money. */
+export function paymentsSource() {
+  const gateway = activeGateway();
+  const live = gateway === "cashfree" ? cashfreeMode === "production" : razorpayKeyId.startsWith("rzp_live_");
+  return { gateway, live, name: gateway === "cashfree" ? "Cashfree" : "Razorpay" };
+}
 
 /**
  * Payments and refunds from Razorpay that belong to THIS website, joined to our orders and customers.
  * A Razorpay account can serve several websites, so only payments for orders created here are kept.
  */
-export async function getPaymentsReport(admin: AdminClient, users: User[], maxOrders = 1000) {
+export async function getPaymentsReport(admin: AdminClient, users: User[]) {
+  return activeGateway() === "cashfree" ? getCashfreeReport(admin, users) : getRazorpayReport(admin, users);
+}
+
+async function getRazorpayReport(admin: AdminClient, users: User[], maxOrders = 1000) {
   if (!isRazorpayConfigured) return { configured: false as const };
 
   // Our own orders (newest first) — these define which Razorpay payments are ours.
@@ -124,5 +135,94 @@ export async function getPaymentsReport(admin: AdminClient, users: User[], maxOr
     userEmail: byPayment.get(r.payment_id)?.userEmail ?? byPayment.get(r.payment_id)?.rzpEmail ?? null,
     item: byPayment.get(r.payment_id)?.item ?? null,
   }));
+  return { configured: true as const, payments: rows, refunds: refundRows };
+}
+
+
+/**
+ * Cashfree has no "list every payment" call, so this reads the latest orders made on THIS website from our database
+ * and asks Cashfree for each order's payments (and refunds for paid orders). Other websites never appear.
+ */
+async function getCashfreeReport(admin: AdminClient, users: User[], maxOrders = 80) {
+  if (!isCashfreeConfigured) return { configured: false as const };
+  const { data, error } = await admin
+    .from("orders")
+    .select("razorpay_order_id,user_id,item_type,subject_id,status,amount_paise,created_at,papers(set_no,subject_id)")
+    .not("razorpay_order_id", "is", null)
+    .order("created_at", { ascending: false })
+    .limit(maxOrders);
+  if (error) return { configured: true as const, error: error.message };
+  const orders = (data ?? []) as {
+    razorpay_order_id: string; user_id: string; item_type: string; subject_id: string | null; status: string; amount_paise: number; created_at: string; papers: unknown;
+  }[];
+  const { data: profiles } = await admin.from("profiles").select("id,full_name,phone").limit(20000);
+  const prof = new Map((profiles ?? []).map((x) => [x.id as string, x]));
+  const emailOf = new Map(users.map((u) => [u.id, u.email ?? null]));
+  const describe = (o: (typeof orders)[number]) => {
+    const pp = o.papers as { set_no: number; subject_id: string } | null;
+    const subj = subjectById(o.subject_id ?? pp?.subject_id ?? "");
+    if (o.item_type === "subject") return `${subj?.name ?? o.subject_id} — all 30 sets`;
+    return subj && pp ? setTitle(subj, pp.set_no) : "Set";
+  };
+  const STATUS: Record<string, string> = { SUCCESS: "captured", FAILED: "failed" };
+
+  const rows: PaymentRow[] = [];
+  const refundRows: RefundRow[] = [];
+  try {
+    for (let i = 0; i < orders.length; i += 6) {
+      await Promise.all(
+        orders.slice(i, i + 6).map(async (o) => {
+          const id = o.razorpay_order_id;
+          const pr = prof.get(o.user_id);
+          const base = {
+            orderId: id,
+            userEmail: emailOf.get(o.user_id) ?? null,
+            userName: (pr?.full_name as string | null) ?? null,
+            rzpEmail: "",
+            rzpContact: (pr?.phone as string | null) ?? "",
+            item: describe(o),
+          };
+          const payments = await getCashfreePayments(id).catch(() => []);
+          const refunds = o.status === "paid" ? await getCashfreeRefunds(id).catch(() => []) : [];
+          const refunded = refunds.filter((r) => r.refund_status === "SUCCESS").reduce((n, r) => n + Math.round(r.refund_amount * 100), 0);
+          for (const r of refunds) {
+            refundRows.push({
+              id: r.refund_id,
+              paymentId: String(r.cf_payment_id ?? ""),
+              amount: Math.round(r.refund_amount * 100),
+              // map to the same words the page already shows
+              status: r.refund_status === "SUCCESS" ? "processed" : r.refund_status === "CANCELLED" || r.refund_status === "REJECTED" ? "failed" : "pending",
+              createdAt: r.created_at ? Math.floor(new Date(r.created_at).getTime() / 1000) : 0,
+              userEmail: base.userEmail,
+              item: base.item,
+            });
+          }
+          if (!payments.length) {
+            rows.push({ ...base, id, createdAt: Math.floor(new Date(o.created_at).getTime() / 1000), amount: o.amount_paise, status: "created",
+              refundStatus: null, amountRefunded: 0, method: "", error: null });
+            return;
+          }
+          for (const pay of payments) {
+            const success = pay.payment_status === "SUCCESS";
+            rows.push({
+              ...base,
+              id: String(pay.cf_payment_id),
+              createdAt: Math.floor(new Date(pay.payment_time || o.created_at).getTime() / 1000),
+              amount: Math.round(pay.payment_amount * 100),
+              status: STATUS[pay.payment_status] ?? "created",
+              refundStatus: success && refunded > 0 ? (refunded >= o.amount_paise ? "full" : "partial") : null,
+              amountRefunded: success ? refunded : 0,
+              method: (pay.payment_group || "").replace(/_/g, " "),
+              error: pay.payment_status === "FAILED" ? pay.error_details?.error_description || pay.payment_message || null : null,
+            });
+          }
+        }),
+      );
+    }
+  } catch (e) {
+    return { configured: true as const, error: e instanceof Error ? e.message : "Could not reach Cashfree" };
+  }
+  rows.sort((a, b) => b.createdAt - a.createdAt);
+  refundRows.sort((a, b) => b.createdAt - a.createdAt);
   return { configured: true as const, payments: rows, refunds: refundRows };
 }

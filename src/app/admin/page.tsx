@@ -5,7 +5,7 @@ import { AdminSetRow, AdminSubjectPrice } from "@/components/AdminControls";
 import { AccessManager, AdminManager, BulkPricing, type PriceRow } from "@/components/AdminTools";
 import { isOwner, listAllUsers, ownerEmails } from "@/lib/admin";
 import { CLASSES, SUBJECTS, setTitle, subjectById, subjectsFor } from "@/lib/catalog";
-import { getPaymentsReport, isLiveMode } from "@/lib/payments";
+import { getPaymentsReport, paymentsSource } from "@/lib/payments";
 import { formatINR } from "@/lib/site";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createAdminClient, getUser, isAdmin } from "@/lib/supabase/server";
@@ -209,8 +209,9 @@ async function Payments({ admin, status }: { admin: Admin; status?: string }) {
   }
   const salesRows = [...sales.values()].sort((a, b) => b.count - a.count || b.revenue - a.revenue);
 
-  if (!report.configured) return <Notice text="Razorpay keys are not set, so payments can't be shown." inline />;
-  if ("error" in report && report.error) return <Notice text={`Could not load payments from Razorpay: ${report.error}`} inline />;
+  const source = paymentsSource();
+  if (!report.configured) return <Notice text="Payment gateway keys are not set, so payments can't be shown." inline />;
+  if ("error" in report && report.error) return <Notice text={`Could not load payments from ${source.name}: ${report.error}`} inline />;
   const payments = report.payments ?? [];
   const refunds = report.refunds ?? [];
 
@@ -232,8 +233,8 @@ async function Payments({ admin, status }: { admin: Admin; status?: string }) {
   return (
     <>
       <p className="mb-5 text-sm text-ink-soft">
-        Straight from Razorpay ({isLiveMode ? "live mode — real money" : "test mode"}), latest {payments.length} payments. Click a payment ID to open it in
-        Razorpay, where you can also issue refunds.
+        Straight from {source.name} ({source.live ? "live mode — real money" : "test mode"}), latest {payments.length} payments of this website.{" "}
+        {source.gateway === "razorpay" ? "Click a payment ID to open it in Razorpay, where you can also issue refunds." : "Issue refunds from the Cashfree dashboard (Transactions)."}
       </p>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {cards.map(([label, count, note, color]) => (
@@ -300,14 +301,13 @@ async function Payments({ admin, status }: { admin: Admin; status?: string }) {
                       {x.error && <p className="mt-1 max-w-[220px] text-xs text-red-700">{x.error}</p>}
                     </td>
                     <td className="p-3">
-                      <a
-                        href={`https://dashboard.razorpay.com/app/payments/${x.id}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="font-mono text-xs text-ink-soft underline"
-                      >
-                        {x.id}
-                      </a>
+                      {source.gateway === "razorpay" ? (
+                        <a href={`https://dashboard.razorpay.com/app/payments/${x.id}`} target="_blank" rel="noreferrer" className="font-mono text-xs text-ink-soft underline">
+                          {x.id}
+                        </a>
+                      ) : (
+                        <span className="font-mono text-xs text-ink-soft">{x.id}</span>
+                      )}
                     </td>
                   </tr>
                 );
